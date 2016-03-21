@@ -1,36 +1,45 @@
-import calculate_hog as ch
 import ConfigParser
-import numpy as np
 import os
+import socket
+
+import numpy as np
+
+import calculate_hog as ch
+
 
 def calculateFeatures(trainData, testData, featureType='hog', database='voc2011'):
-
     config = ConfigParser.SafeConfigParser()
     config.read('config.cfg')
 
+    hostname = socket.gethostname()
+    dirOption = database + 'dir_' + hostname
+
     try:
         config.getboolean(featureType, 'dataSaved')
-        dbLocation = config.get('Databases', database + 'dir')
-        hogTrain = np.load(os.path.join(dbLocation,featureType + '_train.npy'))
-        hogTest = np.load(os.path.join(dbLocation,featureType + '_test.npy'))
+        dbLocation = config.get('Databases', dirOption)
+        hogTrain = np.load(os.path.join(dbLocation, featureType + '_train.npy'))
+        hogTest = np.load(os.path.join(dbLocation, featureType + '_test.npy'))
 
 
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    except Exception as e:
+        print "Unable to load data from disk; calculating features..."
         if (featureType == 'hog'):
             # Create data
             orientations = 8
-            pixels_per_cell = (8,8)
-            cells_per_block = (1,1)
-            hogTrain = ch.calculate_hog(trainData,orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block)
-            hogTest = ch.calculate_hog(testData,orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block)
+            pixels_per_cell = (8, 8)
+            cells_per_block = (1, 1)
+            hogTrain = ch.calculate_hog(trainData, orientations=orientations, pixels_per_cell=pixels_per_cell,
+                                        cells_per_block=cells_per_block)
+            hogTest = ch.calculate_hog(testData, orientations=orientations, pixels_per_cell=pixels_per_cell,
+                                       cells_per_block=cells_per_block)
 
             # Get database location to save to
-            dbLocation = config.get('Databases', database + 'dir')
+            dbLocation = config.get('Databases', dirOption)
 
             # Save data to disk
             print "Saving data to disk..."
-            np.save(os.path.join(dbLocation,featureType + '_train.npy'), hogTrain)
-            np.save(os.path.join(dbLocation,featureType + '_test.npy'), hogTest)
+            np.save(os.path.join(dbLocation, featureType + '_train.npy'), hogTrain)
+            np.save(os.path.join(dbLocation, featureType + '_test.npy'), hogTest)
 
             # Note existence in config file
             config.add_section(featureType)
@@ -38,6 +47,7 @@ def calculateFeatures(trainData, testData, featureType='hog', database='voc2011'
             config.set(featureType, 'dataSaved', 'True')
             with open('config.cfg', 'wb') as configfile:
                 config.write(configfile)
+            configfile.close()
             print "Data saved."
         else:
             raise NotImplementedError('Features other than HOG not implemented.')
