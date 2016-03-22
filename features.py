@@ -45,8 +45,8 @@ def calculateFeatures(trainData, trainLabels, testData, testLabels, featureType=
 
             # Reshape label data
             print "Resizing image class labels..."
-            trainLabelsR = [scm.imresize(lab, 1./8).ravel() for lab in trainLabels]
-            testLabelsR = [scm.imresize(lab, 1./8).ravel() for lab in testLabels]
+            trainLabelsR = [scm.imresize(lab, 1./8, interp='nearest').ravel() for lab in trainLabels]
+            testLabelsR = [scm.imresize(lab, 1./8, interp='nearest').ravel() for lab in testLabels]
 
             # Save data to disk
             print "Saving data to disk..."
