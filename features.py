@@ -6,8 +6,10 @@ import numpy as np
 
 import calculate_hog as ch
 
+import scipy.misc as scm
 
-def calculateFeatures(trainData, testData, featureType='hog', database='voc2011'):
+
+def calculateFeatures(trainData, trainLabels, testData, testLabels, featureType='hog', database='voc2011'):
     config = ConfigParser.SafeConfigParser()
     config.read('config.cfg')
 
@@ -15,10 +17,15 @@ def calculateFeatures(trainData, testData, featureType='hog', database='voc2011'
     dirOption = database + 'dir_' + hostname
 
     try:
+        print "Attempting to load previously computed features from disk..."
         config.getboolean(featureType, 'dataSaved')
         dbLocation = config.get('Databases', dirOption)
-        hogTrain = np.load(os.path.join(dbLocation, featureType + '_train.npy'))
-        hogTest = np.load(os.path.join(dbLocation, featureType + '_test.npy'))
+        trainFile = np.load(os.path.join(dbLocation, featureType + '_train.npz'))
+        hogTrain = trainFile['hogTrain']
+        trainLabelsR = trainFile['trainLabels']
+        testFile = np.load(os.path.join(dbLocation, featureType + '_test.npz'))
+        hogTest = testFile['hogTest']
+        testLabelsR = testFile['testLabels']
 
 
     except Exception as e:
@@ -36,13 +43,22 @@ def calculateFeatures(trainData, testData, featureType='hog', database='voc2011'
             # Get database location to save to
             dbLocation = config.get('Databases', dirOption)
 
+            # Reshape label data
+            print "Resizing image class labels..."
+            trainLabelsR = [scm.imresize(lab, 1./8).ravel() for lab in trainLabels]
+            testLabelsR = [scm.imresize(lab, 1./8).ravel() for lab in testLabels]
+
             # Save data to disk
             print "Saving data to disk..."
-            np.save(os.path.join(dbLocation, featureType + '_train.npy'), hogTrain)
-            np.save(os.path.join(dbLocation, featureType + '_test.npy'), hogTest)
+
+            np.savez_compressed(os.path.join(dbLocation, featureType + '_train.npz'), hogTrain=hogTrain,
+                                trainLabels = trainLabelsR)
+            np.savez_compressed(os.path.join(dbLocation, featureType + '_test.npz'), hogTest= hogTest,
+                                testLabels = testLabelsR)
 
             # Note existence in config file
-            config.add_section(featureType)
+            if not(config.has_section(featureType)):
+                config.add_section(featureType)
 
             config.set(featureType, 'dataSaved', 'True')
             with open('config.cfg', 'wb') as configfile:
@@ -52,4 +68,4 @@ def calculateFeatures(trainData, testData, featureType='hog', database='voc2011'
         else:
             raise NotImplementedError('Features other than HOG not implemented.')
 
-    return hogTrain, hogTest
+    return hogTrain, trainLabelsR, hogTest, testLabelsR

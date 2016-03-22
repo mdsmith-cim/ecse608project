@@ -7,14 +7,12 @@ def main():
     # sdbl.setDBLocation()
 
     # Main code
-    trainData = ld.load_data('train')
-    testData = ld.load_data('test')
-    hogTrain, hogTest = ft.calculateFeatures(trainData, testData)
+    trainData, trainLabels = ld.load_images('train')
+    testData, testLabels = ld.load_images('test')
+    hogTrain, trainLabelsV, hogTest, testLabelsV = ft.calculateFeatures(trainData, trainLabels, testData, testLabels)
 
 
 if __name__ == "__main__":
     main()
     # Things to do
     # - Multiple scales of HoG
-
-    # - Reshape ground truth into same shape
