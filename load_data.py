@@ -5,6 +5,7 @@ import scipy.misc as scm
 
 import skimage.io as io
 
+import numpy as np
 
 def load_images(imageset='train', database='voc2011'):
     optionname = database + 'dir_' + socket.gethostname()
@@ -37,5 +38,9 @@ def load_images(imageset='train', database='voc2011'):
     # Use mode P to load labels
 
     labels = [scm.imread(i, mode='P') for i in classList]
+
+    # Remove all 255's (segment borders)
+    for i in labels:
+        i[i == 255] = 0
 
     return collection, labels
