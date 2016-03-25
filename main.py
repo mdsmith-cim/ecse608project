@@ -1,5 +1,6 @@
 import features as ft
 import load_data as ld
+import svm
 
 #import set_db_location as sdbl
 
@@ -12,6 +13,7 @@ def main():
     testData, testLabels = ld.load_images('test')
     hogTrain, trainLabelsV, hogTest, testLabelsV = ft.calculateFeatures(trainData, trainLabels, testData, testLabels)
 
+    svm.runSVM(hogTrain, trainLabelsV, hogTest, testLabelsV)
 if __name__ == "__main__":
     main()
     # Things to do
