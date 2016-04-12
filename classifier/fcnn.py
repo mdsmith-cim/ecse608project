@@ -7,7 +7,8 @@ from itertools import product
 import theano
 import theano.tensor as T
 
-from lasagne.layers import DenseLayer, InputLayer, ReshapeLayer, DimshuffleLayer, concat, MaxPool2DLayer, InverseLayer
+from lasagne.layers import DenseLayer, InputLayer, ReshapeLayer, DimshuffleLayer, \
+    concat, MaxPool2DLayer, InverseLayer, SliceLayer
 from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, Layer, Upscale2DLayer
 from lasagne.layers.dnn import Conv2DDNNLayer, MaxPool2DDNNLayer
 from lasagne.nonlinearities import rectify, softmax
@@ -23,9 +24,9 @@ class FCNN(object):
 
     def __init__(self, conv_nodes=[64], fc_nodes=[256, 128], learning_rate=0.001,
                  num_epochs=10, dropout_rate=0.5, batch_size=1,
-                 learning_rate_decay=0.93, activation=rectify, validate_pct=0.1, momentum=0.9,
-                 l1_penalty=0., l2_penalty=5e-4, num_classes=20, f=2,
-                 filter_size=(3, 3), num_channels=4, patch_size=(224, 224),
+                 learning_rate_decay=0.95, activation=rectify, validate_pct=0.1, momentum=0.9,
+                 l1_penalty=1e-6, l2_penalty=1e-4, num_classes=21, f=2,
+                 filter_size=(3, 3), num_channels=3, patch_size=(224, 224),
                  verbose=False):
 
         self.input_var = T.tensor4('inputs')
@@ -33,6 +34,7 @@ class FCNN(object):
         self.filter_size = filter_size
         self.patch_size = patch_size
         self.r = len(conv_nodes)*(filter_size[0]/2)
+        self.extraction_step = (1, 1, 64, 64)
         self.num_channels = num_channels
         self.num_classes = num_classes
         self.conv_nodes = conv_nodes
@@ -63,18 +65,36 @@ class FCNN(object):
         self.activation = activation
         self.verbose = verbose
 
-        self.l2 = []
+        # self.l2 = []
         self.build_net()
-        # self.l1 = regularize_layer_params(self.softmax, l1) * l1_penalty
-        # self.l2_out = regularize_layer_params(self.softmax, l2) * 1e-4
+        self.l1 = regularize_layer_params(self.softmax, l1) * l1_penalty
+        self.l2 = regularize_layer_params(self.dense_layers[:-1], l2) * l2_penalty
+        self.l2_out = regularize_layer_params(self.softmax, l2) * 1e-4
         self.build_train_fn()
 
     def predict(self, x):
 
+        x = np.expand_dims(np.rollaxis(x, 2, 0), axis=0)
+        xs, ys = x.shape[2:]
+        xp = 80 + (64 - xs % 64)/2 + 1
+        yp = 80 + (64 - ys % 64)/2 + 1
+
+        x = np.pad(x/255., ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
+
         prediction = get_output(self.network, deterministic=True)
         predict_fn = theano.function([self.input_var], prediction)
 
-        return imresize(predict_fn(x)[0], x.shape[-2:], interp='nearest')
+        patches = np.float32(self.extract_patches(x, self.extraction_step))
+
+        predicted = np.zeros((patches.shape[0], self.num_classes) + self.extraction_step[2:], dtype=np.float32)
+
+        for i in range(patches.shape[0]):
+
+            predicted[i] = predict_fn(patches[i:i+1])
+
+        out = self.reconstruct_from_patches(predicted, (1, self.num_classes) + x.shape[2:])
+
+        return out[:, :, xp:-xp, yp:-yp]
 
     def transform(self, x):
 
@@ -93,7 +113,7 @@ class FCNN(object):
 
         else:
 
-            idx_train = range(x.shape[0])
+            idx_train = range(len(x))
 
 
         print("Starting training...")
@@ -136,7 +156,7 @@ class FCNN(object):
 
         self.val_fn = theano.function([self.input_var, self.target_var], [loss, acc])
 
-    def run_epoch(self, x, y, mask):
+    def run_epoch(self, x, y):
 
         train_err = 0
         train_batches = 0
@@ -149,7 +169,7 @@ class FCNN(object):
 
             print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
 
-    def run_epoch_validate(self, x_val, y_val, mask_val):
+    def run_epoch_validate(self, x_val, y_val):
 
         val_err = 0
         val_acc = 0
@@ -167,9 +187,161 @@ class FCNN(object):
             print("  validation accuracy:\t\t{:.2f} %".format(
                 val_acc / val_batches * 100))
 
+    # def build_net(self):
+        #
+        # input_layer = InputLayer(shape=(self.batch_size, self.num_channels, None, None),
+        #                          input_var=self.input_var)
+        #
+        # c00 = Conv2DDNNLayer(input_layer,
+        #                      num_filters=64,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c01 = Conv2DDNNLayer(c00,
+        #                      num_filters=64,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # p0 = MaxPool2DDNNLayer(c01,
+        #                        pool_size=2)
+        #
+        # c10 = Conv2DDNNLayer(p0,
+        #                      num_filters=128,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c11 = Conv2DDNNLayer(c10,
+        #                      num_filters=128,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # p1 = MaxPool2DDNNLayer(c11,
+        #                        pool_size=2)
+        #
+        # c20 = Conv2DDNNLayer(p1,
+        #                      num_filters=256,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c21 = Conv2DDNNLayer(c20,
+        #                      num_filters=256,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c22 = Conv2DDNNLayer(c21,
+        #                      num_filters=256,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # p2 = MaxPool2DDNNLayer(c22,
+        #                        pool_size=2)
+        #
+        # c30 = Conv2DDNNLayer(p2,
+        #                      num_filters=512,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c31 = Conv2DDNNLayer(c30,
+        #                      num_filters=512,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c32 = Conv2DDNNLayer(c31,
+        #                      num_filters=512,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # p3 = MaxPool2DDNNLayer(c32,
+        #                        pool_size=2)
+        #
+        # c40 = Conv2DDNNLayer(p3,
+        #                      num_filters=512,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c41 = Conv2DDNNLayer(c40,
+        #                      num_filters=512,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c42 = Conv2DDNNLayer(c41,
+        #                      num_filters=512,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # p4 = MaxPool2DDNNLayer(c42,
+        #                        pool_size=2)
+        #
+        # c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
+        #                      num_filters=4096,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
+        #                      num_filters=4096,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # self.l2 = regularize_layer_params([c50, c51], l2) * 5e-4
+        #
+        # c52 = Conv2DDNNLayer(c51,
+        #                      num_filters=1000,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # feature_layer = concat((p2,
+        #                         Upscale2DLayer(p3, scale_factor=2),
+        #                         Upscale2DLayer(c52, scale_factor=4)))
+        #
+        # shape = get_output_shape(feature_layer)
+        #
+        # shuffle = DimshuffleLayer(feature_layer, pattern=(0, 2, 3, 1))
+        #
+        # reshape = ReshapeLayer(shuffle,
+        #                        shape=(np.prod(np.array(shape)[2:]), shape[1]))
+        #
+        # self.softmax = DenseLayer(dropout(reshape, p=self.dropout_rate),
+        #                           num_units=self.num_classes,
+        #                           nonlinearity=softmax)
+        #
+        # self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
+        #                             shape=(self.batch_size, self.num_classes) + shape[2:])
+
     def build_net(self):
 
-        input_layer = InputLayer(shape=(self.batch_size, self.num_channels, None, None),
+        input_layer = InputLayer(shape=(self.batch_size, self.num_channels) + self.patch_size,
                                  input_var=self.input_var)
 
         c00 = Conv2DDNNLayer(input_layer,
@@ -275,39 +447,77 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        p4 = MaxPool2DDNNLayer(c42,
-                               pool_size=2)
+        # p4 = MaxPool2DDNNLayer(c42,
+        #                        pool_size=2)
+        #
+        # c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
+        #                      num_filters=4096,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
+        #                      num_filters=4096,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # self.l2 = regularize_layer_params([c50, c51], l2) * 5e-4
+        #
+        # c52 = Conv2DDNNLayer(c51,
+        #                      num_filters=1000,
+        #                      filter_size=self.filter_size,
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
 
-        c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
-                             num_filters=4096,
-                             filter_size=self.filter_size,
-                             nonlinearity=self.activation,
-                             pad='same',
-                             W=GlorotUniform(gain='relu'))
+        # input_slice = SliceLayer(input_layer, indices=slice(80, 80 + 64), axis=2)
+        # input_slice = SliceLayer(input_slice, indices=slice(80, 80 + 64), axis=3)
 
-        c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
-                             num_filters=4096,
-                             filter_size=self.filter_size,
-                             nonlinearity=self.activation,
-                             pad='same',
-                             W=GlorotUniform(gain='relu'))
+        c01_slice = SliceLayer(c01, indices=slice(80, 80 + 64), axis=2)
+        c01_slice = SliceLayer(c01_slice, indices=slice(80, 80 + 64), axis=3)
 
-        self.l2 = regularize_layer_params([c50, c51], l2) * 5e-4
+        c11_slice = SliceLayer(c11, indices=slice(40, 40 + 32), axis=2)
+        c11_slice = SliceLayer(c11_slice, indices=slice(40, 40 + 32), axis=3)
 
-        c52 = Conv2DDNNLayer(c51,
-                             num_filters=1000,
-                             filter_size=self.filter_size,
-                             nonlinearity=self.activation,
-                             pad='same',
-                             W=GlorotUniform(gain='relu'))
+        c22_slice = SliceLayer(c22, indices=slice(20, 20 + 16), axis=2)
+        c22_slice = SliceLayer(c22_slice, indices=slice(20, 20 + 16), axis=3)
 
-        feature_layer = concat((p2,
-                                Upscale2DLayer(p3, scale_factor=2),
-                                Upscale2DLayer(c52, scale_factor=4)))
+        c32_slice = SliceLayer(c32, indices=slice(10, 10 + 8), axis=2)
+        c32_slice = SliceLayer(c32_slice, indices=slice(10, 10 + 8), axis=3)
 
-        shape = get_output_shape(feature_layer)
+        c42_slice = SliceLayer(c42, indices=slice(5, 5 + 4), axis=2)
+        c42_slice = SliceLayer(c42_slice, indices=slice(5, 5 + 4), axis=3)
 
-        shuffle = DimshuffleLayer(feature_layer, pattern=(0, 2, 3, 1))
+        feature_layer = concat((c01_slice,
+                                Upscale2DLayer(c11_slice, scale_factor=2),
+                                Upscale2DLayer(c22_slice, scale_factor=4),
+                                Upscale2DLayer(c32_slice, scale_factor=8),
+                                Upscale2DLayer(c42_slice, scale_factor=16)))
+
+        ndens = len(self.fc_nodes)
+        dens = []
+        dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
+                                   num_filters=self.fc_nodes[0],
+                                   filter_size=(1, 1),
+                                   nonlinearity=self.activation,
+                                   W=GlorotUniform(gain='relu')))
+
+        for i in range(1, ndens):
+
+            dens.append(Conv2DDNNLayer(dropout(dens[i-1], p=self.dropout_rate),
+                                       num_filters=self.fc_nodes[i],
+                                       filter_size=(1, 1),
+                                       nonlinearity=self.activation,
+                                       W=GlorotUniform(gain='relu')))
+
+        self.dense_layers = dens
+
+        shape = get_output_shape(dens[ndens-1])
+
+        shuffle = DimshuffleLayer(self.dense_layers[ndens-1], pattern=(0, 2, 3, 1))
 
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
@@ -319,36 +529,87 @@ class FCNN(object):
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(self.batch_size, self.num_classes) + shape[2:])
 
-    def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
-        assert len(inputs) == len(targets)
+    # def iterate_minibatches(self, inputs, targets, batchsize, shuffle=False):
+    #     assert len(inputs) == len(targets)
+    #     if shuffle:
+    #         indices = np.arange(len(inputs))
+    #         np.random.shuffle(indices)
+    #     for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
+    #         if shuffle:
+    #             excerpt = indices[start_idx:start_idx + batchsize]
+    #         else:
+    #             excerpt = slice(start_idx, start_idx + batchsize)
+    #
+    #         t_tmp = targets[excerpt]
+    #
+    #         t_out = imresize(t_tmp[0, 0], 0.125, interp='nearest')
+    #
+    #         yield inputs[excerpt], np.ravel(t_out)
+
+    def iterate_minibatches(self, inputs, targets, batch_size, shuffle=False):
+
         if shuffle:
+
             indices = np.arange(len(inputs))
             np.random.shuffle(indices)
-        for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
+
+        for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
+
             if shuffle:
-                excerpt = indices[start_idx:start_idx + batchsize]
+                excerpt = indices[start_idx:start_idx + batch_size]
             else:
-                excerpt = slice(start_idx, start_idx + batchsize)
+                excerpt = slice(start_idx, start_idx + batch_size)
 
-            t_tmp = targets[excerpt]
+            input = np.expand_dims(np.rollaxis(inputs[excerpt[0]], 2, 0), axis=0)
+            target = np.expand_dims(np.expand_dims(targets[excerpt[0]], axis=0), axis=0)
 
-            t_out = imresize(t_tmp[0, 0], 0.125, interp='nearest')
+            xs, ys = input.shape[2:]
 
-            yield inputs[excerpt], np.ravel(t_out)
+            xp = 80 + (64 - xs % 64)/2 + 1
+            yp = 80 + (64 - ys % 64)/2 + 1
 
-    def iterate_minibatches_test(inputs, batchsize, shuffle=False):
+            input = np.pad(input/255., ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
+            target = np.pad(target, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
+
+            if np.random.randint(0, 2) and shuffle:
+                input = input[:, :, :, :-1]
+                target = target[:, :, :, :-1]
+
+            out = np.float32(self.extract_patches(input, self.extraction_step))
+            out_targets = np.int32(self.extract_patches(target, self.extraction_step))
+            valid = range(out.shape[0])
+
+            if shuffle:
+                # valid = np.random.choice(valid[0], int(valid[0].shape[0]*0.1), replace=False)
+                np.random.shuffle(valid)
+
+            out = out[valid]
+            out_targets = out_targets[valid]
+
+            inner_indices = range(out.shape[0])
+            np.random.shuffle(inner_indices)
+
+            for i in inner_indices:
+
+                tars = out_targets[i:i+1, :, 80:-80, 80:-80]
+                tars = tars.reshape((-1,))
+
+                yield out[i:i+1], tars
+
+    def iterate_minibatches_test(self, inputs, batchsize, shuffle=False):
 
         for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
 
             excerpt = slice(start_idx, start_idx + batchsize)
             yield inputs[excerpt]
 
-    def extract_patches(self, arr):
+    def extract_patches(self, arr, extraction_step=1):
 
         patch_shape = (1, arr.shape[1]) + self.patch_size
 
-        extraction_step = (1, 1) + tuple(np.array(arr.shape[2:] - self.patch_size)/self.f)
-
+        # extraction_step = (1, 1) + tuple(np.array(arr.shape[2:] - self.patch_size)/self.f)
+        if isinstance(extraction_step, numbers.Number):
+            extraction_step = tuple([extraction_step] * arr_ndim)
         patch_strides = arr.strides
 
         slices = [slice(None, None, st) for st in extraction_step]
@@ -372,15 +633,15 @@ class FCNN(object):
         img = np.zeros(image_size)
         n = np.zeros(image_size)
 
-        n_h = i_h - p_h + 1
-        n_w = i_w - p_w + 1
+        n_h = i_h - p_h - 80 + 1
+        n_w = i_w - p_w - 80 + 1
 
-        st_h = (i_h - p_h)/self.f
-        st_w = (i_w - p_w)/self.f
+        # st_h = (i_h - p_h)/self.f
+        # st_w = (i_w - p_w)/self.f
 
         for p, (i, j) in zip(patches,
-                             product(range(0, n_h, st_h),
-                                     range(0, n_w, st_w))):
+                             product(range(80, n_h, p_h),
+                                     range(80, n_w, p_w))):
             img[0, :, i:i + p_h, j:j + p_w] += p
             n[0, :, i:i + p_h, j:j + p_w] += 1
 
