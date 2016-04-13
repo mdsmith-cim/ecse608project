@@ -20,8 +20,7 @@ def setDBLocation():
     if (hostname == 'soma'):
         dbLoc = '/home/vision/msmith/localDrive/msmith/ecse608project/VOC2011Train'
     elif (hostname == 'minecraft'):
-        # TODO: Andrew - add your path here
-        dbLoc = 'insert directory here'
+        dbLoc = '/usr/local/data/ajesson/Projects/PycharmProjects/ecse608project/data/VOC2011Train/'
 
     config.set('Databases', optionName, dbLoc)
 
