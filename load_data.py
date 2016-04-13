@@ -5,20 +5,24 @@ import scipy.misc as scm
 
 import skimage.io as io
 
-import numpy as np
-
 def load_images(imageset='train', database='voc2011'):
     optionname = database + 'dir_' + socket.gethostname()
 
-    setToUse = 'train.txt'
-    if imageset == 'test':
+    if imageset == 'train':
+        setToUse = 'train.txt'
+    elif imageset == 'test':
         setToUse = 'val.txt'
+    else:
+        raise Exception("Please specify training or testing data i.e. imageset='train' or imageset='test'")
 
     # Load image names
     config = ConfigParser.SafeConfigParser()
     config.read('config.cfg')
 
-    db_path = config.get('Databases', optionname)
+    try:
+        db_path = config.get('Databases', optionname)
+    except Exception as e:
+        raise Exception("Unable to read path to database from config file.  Expected to find entry named " + optionname + " in [Databases] section.")
 
     imageListFile = os.path.join(db_path, 'ImageSets', 'Segmentation', setToUse)
 
