@@ -75,9 +75,9 @@ class FCNN(object):
 
     def predict(self, x):
 
-        mu = np.array([123.68/255., 116.779/255., 103.939/255.], dtype=np.float32)
+        mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
 
-        x = np.float32(x/255.) - mu
+        x = np.float32(x) - mu
 
         x = np.expand_dims(np.rollaxis(x, 2, 0), axis=0)
         xs, ys = x.shape[2:]
@@ -547,35 +547,35 @@ class FCNN(object):
                                 Upscale2DLayer(c32_slice, scale_factor=8),
                                 Upscale2DLayer(c42_slice, scale_factor=16)))
 
-        ndens = len(self.fc_nodes)
-        dens = []
-        dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
-                                   num_filters=self.fc_nodes[0],
-                                   filter_size=(1, 1),
-                                   nonlinearity=self.activation,
-                                   W=GlorotUniform(gain='relu')))
+        # ndens = len(self.fc_nodes)
+        # dens = []
+        # dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
+        #                            num_filters=self.fc_nodes[0],
+        #                            filter_size=(1, 1),
+        #                            nonlinearity=self.activation,
+        #                            W=GlorotUniform(gain='relu')))
+        #
+        # for i in range(1, ndens):
+        #
+        #     dens.append(Conv2DDNNLayer(dropout(dens[i-1], p=self.dropout_rate),
+        #                                num_filters=self.fc_nodes[i],
+        #                                filter_size=(1, 1),
+        #                                nonlinearity=self.activation,
+        #                                W=GlorotUniform(gain='relu')))
+        #
+        # self.dense_layers = dens
+        #
+        # shape = get_output_shape(dens[ndens-1])
+        #
+        # shuffle = DimshuffleLayer(self.dense_layers[ndens-1], pattern=(0, 2, 3, 1))
 
-        for i in range(1, ndens):
-
-            dens.append(Conv2DDNNLayer(dropout(dens[i-1], p=self.dropout_rate),
-                                       num_filters=self.fc_nodes[i],
-                                       filter_size=(1, 1),
-                                       nonlinearity=self.activation,
-                                       W=GlorotUniform(gain='relu')))
-
-        self.dense_layers = dens
-
-        shape = get_output_shape(dens[ndens-1])
-
-        shuffle = DimshuffleLayer(self.dense_layers[ndens-1], pattern=(0, 2, 3, 1))
-
-        # shape = get_output_shape(feature_layer)
-        # shuffle = DimshuffleLayer(feature_layer, pattern=(0, 2, 3, 1))
+        shape = get_output_shape(feature_layer)
+        shuffle = DimshuffleLayer(feature_layer, pattern=(0, 2, 3, 1))
 
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
 
-        self.softmax = DenseLayer(dropout(reshape, p=self.dropout_rate),
+        self.softmax = DenseLayer(dropout(reshape, p=0.),
                                   num_units=self.num_classes,
                                   nonlinearity=softmax)
 
@@ -596,10 +596,10 @@ class FCNN(object):
             else:
                 excerpt = slice(start_idx, start_idx + batch_size)
 
-            # mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
-            mu = np.array([123.68/255., 116.779/255., 103.939/255.], dtype=np.float32)
+            mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
+            # mu = np.array([123.68/255., 116.779/255., 103.939/255.], dtype=np.float32)
 
-            input = np.float32(inputs[excerpt[0]]/255.) - mu
+            input = np.float32(inputs[excerpt[0]]) - mu
 
             input = np.expand_dims(np.rollaxis(input, 2, 0), axis=0)
             target = np.expand_dims(np.expand_dims(targets[excerpt[0]], axis=0), axis=0)
