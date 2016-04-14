@@ -15,7 +15,7 @@ from lasagne.nonlinearities import rectify, softmax
 from lasagne.objectives import aggregate, categorical_crossentropy, categorical_accuracy
 from lasagne.updates import nesterov_momentum
 from lasagne.init import GlorotUniform, Orthogonal
-from lasagne.regularization import regularize_layer_params, l2, l1
+from lasagne.regularization import regularize_layer_params, l2, l1, regularize_network_params
 from scipy.misc import imresize
 
 __author__ = 'ajesson'
@@ -67,12 +67,17 @@ class FCNN(object):
 
         # self.l2 = []
         self.build_net()
-        self.l1 = regularize_layer_params(self.softmax, l1) * l1_penalty
-        self.l2 = regularize_layer_params(self.dense_layers[:-1], l2) * l2_penalty
-        self.l2_out = regularize_layer_params(self.softmax, l2) * 1e-4
+        self.l1 = regularize_layer_params(self.softmax, l1)*l1_penalty
+        self.l2 = regularize_network_params(self.network, l2)*l2_penalty
+        # self.l2 = regularize_layer_params(self.dense_layers[:-1], l2) * l2_penalty
+        # self.l2_out = regularize_layer_params(self.softmax, l2) * 1e-4
         self.build_train_fn()
 
     def predict(self, x):
+
+        mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
+
+        x = np.float32(x) - mu
 
         x = np.expand_dims(np.rollaxis(x, 2, 0), axis=0)
         xs, ys = x.shape[2:]
@@ -138,7 +143,7 @@ class FCNN(object):
         prediction = get_output(self.softmax, deterministic=False)
 
         loss = categorical_crossentropy(prediction, self.target_var)
-        loss = aggregate(loss) + self.l1 + self.l2 + self.l2_out
+        loss = aggregate(loss) + self.l1 + self.l2
 
         params = get_all_params(self.network, trainable=True)
 
@@ -351,12 +356,18 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
+        c00.add_param(c00.W, c00.W.get_value().shape, trainable=False)
+        c00.add_param(c00.b, c00.b.get_value().shape, trainable=False)
+
         c01 = Conv2DDNNLayer(c00,
                              num_filters=64,
                              filter_size=self.filter_size,
                              nonlinearity=self.activation,
                              pad='same',
                              W=GlorotUniform(gain='relu'))
+
+        c01.add_param(c01.W, c01.W.get_value().shape, trainable=False)
+        c01.add_param(c01.b, c01.b.get_value().shape, trainable=False)
 
         p0 = MaxPool2DDNNLayer(c01,
                                pool_size=2)
@@ -368,12 +379,18 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
+        c10.add_param(c10.W, c10.W.get_value().shape, trainable=False)
+        c10.add_param(c10.b, c10.b.get_value().shape, trainable=False)
+
         c11 = Conv2DDNNLayer(c10,
                              num_filters=128,
                              filter_size=self.filter_size,
                              nonlinearity=self.activation,
                              pad='same',
                              W=GlorotUniform(gain='relu'))
+
+        c11.add_param(c11.W, c11.W.get_value().shape, trainable=False)
+        c11.add_param(c11.b, c11.b.get_value().shape, trainable=False)
 
         p1 = MaxPool2DDNNLayer(c11,
                                pool_size=2)
@@ -385,6 +402,9 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
+        c20.add_param(c20.W, c20.W.get_value().shape, trainable=False)
+        c20.add_param(c20.b, c20.b.get_value().shape, trainable=False)
+
         c21 = Conv2DDNNLayer(c20,
                              num_filters=256,
                              filter_size=self.filter_size,
@@ -392,12 +412,18 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
+        c21.add_param(c21.W, c21.W.get_value().shape, trainable=False)
+        c21.add_param(c21.b, c21.b.get_value().shape, trainable=False)
+
         c22 = Conv2DDNNLayer(c21,
                              num_filters=256,
                              filter_size=self.filter_size,
                              nonlinearity=self.activation,
                              pad='same',
                              W=GlorotUniform(gain='relu'))
+
+        c22.add_param(c22.W, c22.W.get_value().shape, trainable=False)
+        c22.add_param(c22.b, c22.b.get_value().shape, trainable=False)
 
         p2 = MaxPool2DDNNLayer(c22,
                                pool_size=2)
@@ -409,6 +435,9 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
+        c30.add_param(c30.W, c30.W.get_value().shape, trainable=False)
+        c30.add_param(c30.b, c30.b.get_value().shape, trainable=False)
+
         c31 = Conv2DDNNLayer(c30,
                              num_filters=512,
                              filter_size=self.filter_size,
@@ -416,12 +445,18 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
+        c31.add_param(c31.W, c31.W.get_value().shape, trainable=False)
+        c31.add_param(c31.b, c31.b.get_value().shape, trainable=False)
+
         c32 = Conv2DDNNLayer(c31,
                              num_filters=512,
                              filter_size=self.filter_size,
                              nonlinearity=self.activation,
                              pad='same',
                              W=GlorotUniform(gain='relu'))
+
+        c32.add_param(c32.W, c32.W.get_value().shape, trainable=False)
+        c32.add_param(c32.b, c32.b.get_value().shape, trainable=False)
 
         p3 = MaxPool2DDNNLayer(c32,
                                pool_size=2)
@@ -433,12 +468,18 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
+        c40.add_param(c40.W, c40.W.get_value().shape, trainable=False)
+        c40.add_param(c40.b, c40.b.get_value().shape, trainable=False)
+
         c41 = Conv2DDNNLayer(c40,
                              num_filters=512,
                              filter_size=self.filter_size,
                              nonlinearity=self.activation,
                              pad='same',
                              W=GlorotUniform(gain='relu'))
+
+        c41.add_param(c41.W, c41.W.get_value().shape, trainable=False)
+        c41.add_param(c41.b, c41.b.get_value().shape, trainable=False)
 
         c42 = Conv2DDNNLayer(c41,
                              num_filters=512,
@@ -447,15 +488,20 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        # p4 = MaxPool2DDNNLayer(c42,
-        #                        pool_size=2)
-        #
+        c42.add_param(c42.W, c42.W.get_value().shape, trainable=False)
+        c42.add_param(c42.b, c42.b.get_value().shape, trainable=False)
+
+        p4 = MaxPool2DDNNLayer(c42,
+                               pool_size=2)
+
         # c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
         #                      num_filters=4096,
-        #                      filter_size=self.filter_size,
+        #                      filter_size=(7, 7),
         #                      nonlinearity=self.activation,
-        #                      pad='same',
         #                      W=GlorotUniform(gain='relu'))
+        #
+        # c50.add_param(c50.W, c50.W.get_value().shape, trainable=False)
+        # c50.add_param(c50.b, c50.b.get_value().shape, trainable=False)
         #
         # c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
         #                      num_filters=4096,
@@ -464,7 +510,8 @@ class FCNN(object):
         #                      pad='same',
         #                      W=GlorotUniform(gain='relu'))
         #
-        # self.l2 = regularize_layer_params([c50, c51], l2) * 5e-4
+        # c51.add_param(c51.W, c51.W.get_value().shape, trainable=False)
+        # c51.add_param(c51.b, c51.b.get_value().shape, trainable=False)
         #
         # c52 = Conv2DDNNLayer(c51,
         #                      num_filters=1000,
@@ -472,6 +519,9 @@ class FCNN(object):
         #                      nonlinearity=self.activation,
         #                      pad='same',
         #                      W=GlorotUniform(gain='relu'))
+        #
+        # c52.add_param(c52.W, c52.W.get_value().shape, trainable=False)
+        # c52.add_param(c52.b, c52.b.get_value().shape, trainable=False)
 
         # input_slice = SliceLayer(input_layer, indices=slice(80, 80 + 64), axis=2)
         # input_slice = SliceLayer(input_slice, indices=slice(80, 80 + 64), axis=3)
@@ -497,27 +547,30 @@ class FCNN(object):
                                 Upscale2DLayer(c32_slice, scale_factor=8),
                                 Upscale2DLayer(c42_slice, scale_factor=16)))
 
-        ndens = len(self.fc_nodes)
-        dens = []
-        dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
-                                   num_filters=self.fc_nodes[0],
-                                   filter_size=(1, 1),
-                                   nonlinearity=self.activation,
-                                   W=GlorotUniform(gain='relu')))
+        # ndens = len(self.fc_nodes)
+        # dens = []
+        # dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
+        #                            num_filters=self.fc_nodes[0],
+        #                            filter_size=(1, 1),
+        #                            nonlinearity=self.activation,
+        #                            W=GlorotUniform(gain='relu')))
+        #
+        # for i in range(1, ndens):
+        #
+        #     dens.append(Conv2DDNNLayer(dropout(dens[i-1], p=self.dropout_rate),
+        #                                num_filters=self.fc_nodes[i],
+        #                                filter_size=(1, 1),
+        #                                nonlinearity=self.activation,
+        #                                W=GlorotUniform(gain='relu')))
+        #
+        # self.dense_layers = dens
+        #
+        # shape = get_output_shape(dens[ndens-1])
+        #
+        # shuffle = DimshuffleLayer(self.dense_layers[ndens-1], pattern=(0, 2, 3, 1))
 
-        for i in range(1, ndens):
-
-            dens.append(Conv2DDNNLayer(dropout(dens[i-1], p=self.dropout_rate),
-                                       num_filters=self.fc_nodes[i],
-                                       filter_size=(1, 1),
-                                       nonlinearity=self.activation,
-                                       W=GlorotUniform(gain='relu')))
-
-        self.dense_layers = dens
-
-        shape = get_output_shape(dens[ndens-1])
-
-        shuffle = DimshuffleLayer(self.dense_layers[ndens-1], pattern=(0, 2, 3, 1))
+        shape = get_output_shape(feature_layer)
+        shuffle = DimshuffleLayer(feature_layer, pattern=(0, 2, 3, 1))
 
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
@@ -528,23 +581,6 @@ class FCNN(object):
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(self.batch_size, self.num_classes) + shape[2:])
-
-    # def iterate_minibatches(self, inputs, targets, batchsize, shuffle=False):
-    #     assert len(inputs) == len(targets)
-    #     if shuffle:
-    #         indices = np.arange(len(inputs))
-    #         np.random.shuffle(indices)
-    #     for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
-    #         if shuffle:
-    #             excerpt = indices[start_idx:start_idx + batchsize]
-    #         else:
-    #             excerpt = slice(start_idx, start_idx + batchsize)
-    #
-    #         t_tmp = targets[excerpt]
-    #
-    #         t_out = imresize(t_tmp[0, 0], 0.125, interp='nearest')
-    #
-    #         yield inputs[excerpt], np.ravel(t_out)
 
     def iterate_minibatches(self, inputs, targets, batch_size, shuffle=False):
 
@@ -560,7 +596,11 @@ class FCNN(object):
             else:
                 excerpt = slice(start_idx, start_idx + batch_size)
 
-            input = np.expand_dims(np.rollaxis(inputs[excerpt[0]], 2, 0), axis=0)
+            mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
+
+            input = np.float32(inputs[excerpt[0]]) - mu
+
+            input = np.expand_dims(np.rollaxis(input, 2, 0), axis=0)
             target = np.expand_dims(np.expand_dims(targets[excerpt[0]], axis=0), axis=0)
 
             xs, ys = input.shape[2:]
@@ -568,7 +608,7 @@ class FCNN(object):
             xp = 80 + (64 - xs % 64)/2 + 1
             yp = 80 + (64 - ys % 64)/2 + 1
 
-            input = np.pad(input/255., ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
+            input = np.pad(input, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
             target = np.pad(target, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
 
             if np.random.randint(0, 2) and shuffle:
