@@ -9,7 +9,7 @@ import theano.tensor as T
 
 from lasagne.layers import DenseLayer, InputLayer, ReshapeLayer, DimshuffleLayer, \
     concat, MaxPool2DLayer, InverseLayer, SliceLayer
-from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, Layer, Upscale2DLayer
+from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, Upscale2DLayer, batch_norm
 from lasagne.layers.dnn import Conv2DDNNLayer, MaxPool2DDNNLayer
 from lasagne.nonlinearities import rectify, softmax
 from lasagne.objectives import aggregate, categorical_crossentropy, categorical_accuracy
@@ -575,9 +575,9 @@ class FCNN(object):
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
 
-        self.softmax = DenseLayer(dropout(reshape, p=0.),
+        self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
                                   num_units=self.num_classes,
-                                  nonlinearity=softmax)
+                                  nonlinearity=softmax))
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(self.batch_size, self.num_classes) + shape[2:])
@@ -588,13 +588,12 @@ class FCNN(object):
 
             indices = np.arange(len(inputs))
             np.random.shuffle(indices)
+	else:
+	    indices = np.arange(len(inputs))	
 
         for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
 
-            if shuffle:
-                excerpt = indices[start_idx:start_idx + batch_size]
-            else:
-                excerpt = slice(start_idx, start_idx + batch_size)
+            excerpt = indices[start_idx:start_idx + batch_size]
 
             mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
             # mu = np.array([123.68/255., 116.779/255., 103.939/255.], dtype=np.float32)
