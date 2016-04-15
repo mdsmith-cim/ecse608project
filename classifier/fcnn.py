@@ -549,11 +549,17 @@ class FCNN(object):
 
         ndens = len(self.fc_nodes)
         dens = []
-        dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
-                                   num_filters=self.fc_nodes[0],
-                                   filter_size=(1, 1),
-                                   nonlinearity=self.activation,
-                                   W=GlorotUniform(gain='relu')))
+        # dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
+        #                            num_filters=self.fc_nodes[0],
+        #                            filter_size=(1, 1),
+        #                            nonlinearity=self.activation,
+        #                            W=GlorotUniform(gain='relu')))
+
+        dens.append(batch_norm(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
+                                              num_filters=self.fc_nodes[0],
+                                              filter_size=(1, 1),
+                                              nonlinearity=self.activation,
+                                              W=GlorotUniform(gain='relu'))))
 
         for i in range(1, ndens):
 
@@ -575,9 +581,12 @@ class FCNN(object):
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
 
-        self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
+        # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
+        #                           num_units=self.num_classes,
+        #                           nonlinearity=softmax))
+        self.softmax = DenseLayer(dropout(reshape, p=0.),
                                   num_units=self.num_classes,
-                                  nonlinearity=softmax))
+                                  nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(self.batch_size, self.num_classes) + shape[2:])
