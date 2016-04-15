@@ -495,34 +495,34 @@ class FCNN(object):
         p4 = MaxPool2DDNNLayer(c42,
                                pool_size=2)
 
-        # c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
-        #                      num_filters=4096,
-        #                      filter_size=(7, 7),
-        #                      nonlinearity=self.activation,
-        #                      W=GlorotUniform(gain='relu'))
-        #
-        # c50.add_param(c50.W, c50.W.get_value().shape, trainable=False)
-        # c50.add_param(c50.b, c50.b.get_value().shape, trainable=False)
-        #
-        # c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
-        #                      num_filters=4096,
-        #                      filter_size=self.filter_size,
-        #                      nonlinearity=self.activation,
-        #                      pad='same',
-        #                      W=GlorotUniform(gain='relu'))
-        #
-        # c51.add_param(c51.W, c51.W.get_value().shape, trainable=False)
-        # c51.add_param(c51.b, c51.b.get_value().shape, trainable=False)
-        #
-        # c52 = Conv2DDNNLayer(c51,
-        #                      num_filters=1000,
-        #                      filter_size=self.filter_size,
-        #                      nonlinearity=self.activation,
-        #                      pad='same',
-        #                      W=GlorotUniform(gain='relu'))
-        #
-        # c52.add_param(c52.W, c52.W.get_value().shape, trainable=False)
-        # c52.add_param(c52.b, c52.b.get_value().shape, trainable=False)
+        c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
+                             num_filters=4096,
+                             filter_size=(7, 7),
+                             nonlinearity=self.activation,
+                             W=GlorotUniform(gain='relu'))
+
+        c50.add_param(c50.W, c50.W.get_value().shape, trainable=False)
+        c50.add_param(c50.b, c50.b.get_value().shape, trainable=False)
+
+        c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
+                             num_filters=4096,
+                             filter_size=(1, 1),
+                             nonlinearity=self.activation,
+                             pad='same',
+                             W=GlorotUniform(gain='relu'))
+
+        c51.add_param(c51.W, c51.W.get_value().shape, trainable=False)
+        c51.add_param(c51.b, c51.b.get_value().shape, trainable=False)
+
+        c52 = Conv2DDNNLayer(c51,
+                             num_filters=1000,
+                             filter_size=(1, 1),
+                             nonlinearity=self.activation,
+                             pad='same',
+                             W=GlorotUniform(gain='relu'))
+
+        c52.add_param(c52.W, c52.W.get_value().shape, trainable=False)
+        c52.add_param(c52.b, c52.b.get_value().shape, trainable=False)
 
         # input_slice = SliceLayer(input_layer, indices=slice(80, 80 + 64), axis=2)
         # input_slice = SliceLayer(input_slice, indices=slice(80, 80 + 64), axis=3)
@@ -546,7 +546,8 @@ class FCNN(object):
                                 Upscale2DLayer(c11_slice, scale_factor=2),
                                 Upscale2DLayer(c22_slice, scale_factor=4),
                                 Upscale2DLayer(c32_slice, scale_factor=8),
-                                Upscale2DLayer(c42_slice, scale_factor=16)))
+                                Upscale2DLayer(c42_slice, scale_factor=16),
+                                Upscale2DLayer(c52, scale_factor=64)))
 
         # ndens = len(self.fc_nodes)
         # dens = []
