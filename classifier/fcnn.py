@@ -86,7 +86,7 @@ class FCNN(object):
         xp = 80 + (64 - xs % 64)/2 + 1
         yp = 80 + (64 - ys % 64)/2 + 1
 
-        x = np.pad(x/255., ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
+        x = np.pad(x, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
 
         prediction = get_output(self.network, deterministic=True)
         predict_fn = theano.function([self.input_var], prediction)
