@@ -665,7 +665,7 @@ class FCNN(object):
         sh = get_output_shape(input_layer)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
-                                    shape=(sh[0], self.num_classes) + shape[2:])
+                                    shape=(None, self.num_classes) + shape[2:])
 
     def iterate_minibatches(self, inputs, targets, batch_size, shuffle=False):
 
