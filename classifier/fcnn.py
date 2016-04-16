@@ -358,8 +358,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c00.add_param(c00.W, c00.W.get_value().shape, trainable=self.refine)
-        c00.add_param(c00.b, c00.b.get_value().shape, trainable=self.refine)
+        c00.add_param(c00.W, c00.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c00.add_param(c00.b, c00.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         c01 = Conv2DDNNLayer(c00,
                              num_filters=64,
@@ -368,8 +368,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c01.add_param(c01.W, c01.W.get_value().shape, trainable=self.refine)
-        c01.add_param(c01.b, c01.b.get_value().shape, trainable=self.refine)
+        c01.add_param(c01.W, c01.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c01.add_param(c01.b, c01.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         p0 = MaxPool2DDNNLayer(c01,
                                pool_size=2)
@@ -381,8 +381,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c10.add_param(c10.W, c10.W.get_value().shape, trainable=self.refine)
-        c10.add_param(c10.b, c10.b.get_value().shape, trainable=self.refine)
+        c10.add_param(c10.W, c10.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c10.add_param(c10.b, c10.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         c11 = Conv2DDNNLayer(c10,
                              num_filters=128,
@@ -391,8 +391,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c11.add_param(c11.W, c11.W.get_value().shape, trainable=self.refine)
-        c11.add_param(c11.b, c11.b.get_value().shape, trainable=self.refine)
+        c11.add_param(c11.W, c11.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c11.add_param(c11.b, c11.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         p1 = MaxPool2DDNNLayer(c11,
                                pool_size=2)
@@ -404,8 +404,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c20.add_param(c20.W, c20.W.get_value().shape, trainable=self.refine)
-        c20.add_param(c20.b, c20.b.get_value().shape, trainable=self.refine)
+        c20.add_param(c20.W, c20.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c20.add_param(c20.b, c20.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         c21 = Conv2DDNNLayer(c20,
                              num_filters=256,
@@ -414,8 +414,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c21.add_param(c21.W, c21.W.get_value().shape, trainable=self.refine)
-        c21.add_param(c21.b, c21.b.get_value().shape, trainable=self.refine)
+        c21.add_param(c21.W, c21.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c21.add_param(c21.b, c21.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         c22 = Conv2DDNNLayer(c21,
                              num_filters=256,
@@ -424,8 +424,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c22.add_param(c22.W, c22.W.get_value().shape, trainable=self.refine)
-        c22.add_param(c22.b, c22.b.get_value().shape, trainable=self.refine)
+        c22.add_param(c22.W, c22.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c22.add_param(c22.b, c22.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         p2 = MaxPool2DDNNLayer(c22,
                                pool_size=2)
@@ -437,8 +437,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c30.add_param(c30.W, c30.W.get_value().shape, trainable=self.refine)
-        c30.add_param(c30.b, c30.b.get_value().shape, trainable=self.refine)
+        c30.add_param(c30.W, c30.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c30.add_param(c30.b, c30.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         c31 = Conv2DDNNLayer(c30,
                              num_filters=512,
@@ -447,8 +447,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c31.add_param(c31.W, c31.W.get_value().shape, trainable=self.refine)
-        c31.add_param(c31.b, c31.b.get_value().shape, trainable=self.refine)
+        c31.add_param(c31.W, c31.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c31.add_param(c31.b, c31.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         c32 = Conv2DDNNLayer(c31,
                              num_filters=512,
@@ -457,8 +457,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c32.add_param(c32.W, c32.W.get_value().shape, trainable=self.refine)
-        c32.add_param(c32.b, c32.b.get_value().shape, trainable=self.refine)
+        c32.add_param(c32.W, c32.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c32.add_param(c32.b, c32.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         p3 = MaxPool2DDNNLayer(c32,
                                pool_size=2)
@@ -470,8 +470,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c40.add_param(c40.W, c40.W.get_value().shape, trainable=self.refine)
-        c40.add_param(c40.b, c40.b.get_value().shape, trainable=self.refine)
+        c40.add_param(c40.W, c40.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c40.add_param(c40.b, c40.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         c41 = Conv2DDNNLayer(c40,
                              num_filters=512,
@@ -480,8 +480,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c41.add_param(c41.W, c41.W.get_value().shape, trainable=self.refine)
-        c41.add_param(c41.b, c41.b.get_value().shape, trainable=self.refine)
+        c41.add_param(c41.W, c41.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c41.add_param(c41.b, c41.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         c42 = Conv2DDNNLayer(c41,
                              num_filters=512,
@@ -490,8 +490,8 @@ class FCNN(object):
                              pad='same',
                              W=GlorotUniform(gain='relu'))
 
-        c42.add_param(c42.W, c42.W.get_value().shape, trainable=self.refine)
-        c42.add_param(c42.b, c42.b.get_value().shape, trainable=self.refine)
+        c42.add_param(c42.W, c42.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
+        c42.add_param(c42.b, c42.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
         # p4 = MaxPool2DDNNLayer(c42,
         #                        pool_size=2)
