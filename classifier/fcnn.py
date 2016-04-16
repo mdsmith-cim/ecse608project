@@ -8,13 +8,13 @@ import theano
 import theano.tensor as T
 
 from lasagne.layers import DenseLayer, InputLayer, ReshapeLayer, DimshuffleLayer, \
-    concat, MaxPool2DLayer, InverseLayer, SliceLayer
+    concat, TransformerLayer, SliceLayer
 from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, Upscale2DLayer, batch_norm
 from lasagne.layers.dnn import Conv2DDNNLayer, MaxPool2DDNNLayer
 from lasagne.nonlinearities import rectify, softmax
 from lasagne.objectives import aggregate, categorical_crossentropy, categorical_accuracy
 from lasagne.updates import nesterov_momentum
-from lasagne.init import GlorotUniform, Orthogonal
+from lasagne.init import GlorotUniform, Constant
 from lasagne.regularization import regularize_layer_params, l2, l1, regularize_network_params
 from scipy.misc import imresize
 
@@ -550,11 +550,34 @@ class FCNN(object):
         #                         Upscale2DLayer(c42_slice, scale_factor=16),
         #                         Upscale2DLayer(c52, scale_factor=64)))
 
+        b = np.zeros((2, 3), dtype='float32')
+        b[0, 0] = 1
+        b[1, 1] = 1
+        b = b.flatten()
+        l_loc_c11 = DenseLayer(c11_slice, num_units=6, W=Constant(0.0), b=np.copy(b), nonlinearity=None)
+        c11_up = TransformerLayer(c11_slice, l_loc_c11, downsample_factor=0.5)
+
+        l_loc_c22 = DenseLayer(c22_slice, num_units=6, W=Constant(0.0), b=np.copy(b), nonlinearity=None)
+        c22_up = TransformerLayer(c22_slice, l_loc_c22, downsample_factor=0.25)
+
+        l_loc_c32 = DenseLayer(c32_slice, num_units=6, W=Constant(0.0), b=np.copy(b), nonlinearity=None)
+        c32_up = TransformerLayer(c32_slice, l_loc_c32, downsample_factor=0.125)
+
+        l_loc_c42 = DenseLayer(c42_slice, num_units=6, W=Constant(0.0), b=np.copy(b), nonlinearity=None)
+        c42_up = TransformerLayer(c42_slice, l_loc_c42, downsample_factor=0.0625)
+
         feature_layer = concat((c01_slice,
-                                Upscale2DLayer(c11_slice, scale_factor=2),
-                                Upscale2DLayer(c22_slice, scale_factor=4),
-                                Upscale2DLayer(c32_slice, scale_factor=8),
-                                Upscale2DLayer(c42_slice, scale_factor=16)))
+                                c11_up,
+                                c22_up,
+                                c32_up,
+                                c42_up))
+
+
+        # feature_layer = concat((c01_slice,
+        #                         Upscale2DLayer(c11_slice, scale_factor=2),
+        #                         Upscale2DLayer(c22_slice, scale_factor=4),
+        #                         Upscale2DLayer(c32_slice, scale_factor=8),
+        #                         Upscale2DLayer(c42_slice, scale_factor=16)))
 
         ndens = len(self.fc_nodes)
         dens = []
