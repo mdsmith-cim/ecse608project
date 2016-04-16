@@ -493,37 +493,37 @@ class FCNN(object):
         c42.add_param(c42.W, c42.W.get_value().shape, trainable=self.refine)
         c42.add_param(c42.b, c42.b.get_value().shape, trainable=self.refine)
 
-        p4 = MaxPool2DDNNLayer(c42,
-                               pool_size=2)
-
-        c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
-                             num_filters=4096,
-                             filter_size=(7, 7),
-                             nonlinearity=self.activation,
-                             W=GlorotUniform(gain='relu'))
-
-        c50.add_param(c50.W, c50.W.get_value().shape, trainable=self.refine)
-        c50.add_param(c50.b, c50.b.get_value().shape, trainable=self.refine)
-
-        c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
-                             num_filters=4096,
-                             filter_size=(1, 1),
-                             nonlinearity=self.activation,
-                             pad='same',
-                             W=GlorotUniform(gain='relu'))
-
-        c51.add_param(c51.W, c51.W.get_value().shape, trainable=self.refine)
-        c51.add_param(c51.b, c51.b.get_value().shape, trainable=self.refine)
-
-        c52 = Conv2DDNNLayer(c51,
-                             num_filters=1000,
-                             filter_size=(1, 1),
-                             nonlinearity=self.activation,
-                             pad='same',
-                             W=GlorotUniform(gain='relu'))
-
-        c52.add_param(c52.W, c52.W.get_value().shape, trainable=self.refine)
-        c52.add_param(c52.b, c52.b.get_value().shape, trainable=self.refine)
+        # p4 = MaxPool2DDNNLayer(c42,
+        #                        pool_size=2)
+        #
+        # c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
+        #                      num_filters=4096,
+        #                      filter_size=(7, 7),
+        #                      nonlinearity=self.activation,
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c50.add_param(c50.W, c50.W.get_value().shape, trainable=self.refine)
+        # c50.add_param(c50.b, c50.b.get_value().shape, trainable=self.refine)
+        #
+        # c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
+        #                      num_filters=4096,
+        #                      filter_size=(1, 1),
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c51.add_param(c51.W, c51.W.get_value().shape, trainable=self.refine)
+        # c51.add_param(c51.b, c51.b.get_value().shape, trainable=self.refine)
+        #
+        # c52 = Conv2DDNNLayer(c51,
+        #                      num_filters=1000,
+        #                      filter_size=(1, 1),
+        #                      nonlinearity=self.activation,
+        #                      pad='same',
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c52.add_param(c52.W, c52.W.get_value().shape, trainable=self.refine)
+        # c52.add_param(c52.b, c52.b.get_value().shape, trainable=self.refine)
 
         # input_slice = SliceLayer(input_layer, indices=slice(80, 80 + 64), axis=2)
         # input_slice = SliceLayer(input_slice, indices=slice(80, 80 + 64), axis=3)
@@ -543,53 +543,59 @@ class FCNN(object):
         c42_slice = SliceLayer(c42, indices=slice(5, 5 + 4), axis=2)
         c42_slice = SliceLayer(c42_slice, indices=slice(5, 5 + 4), axis=3)
 
+        # feature_layer = concat((c01_slice,
+        #                         Upscale2DLayer(c11_slice, scale_factor=2),
+        #                         Upscale2DLayer(c22_slice, scale_factor=4),
+        #                         Upscale2DLayer(c32_slice, scale_factor=8),
+        #                         Upscale2DLayer(c42_slice, scale_factor=16),
+        #                         Upscale2DLayer(c52, scale_factor=64)))
+
         feature_layer = concat((c01_slice,
                                 Upscale2DLayer(c11_slice, scale_factor=2),
                                 Upscale2DLayer(c22_slice, scale_factor=4),
                                 Upscale2DLayer(c32_slice, scale_factor=8),
-                                Upscale2DLayer(c42_slice, scale_factor=16),
-                                Upscale2DLayer(c52, scale_factor=64)))
+                                Upscale2DLayer(c42_slice, scale_factor=16)))
 
-        # ndens = len(self.fc_nodes)
-        # dens = []
-        # # dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
-        # #                            num_filters=self.fc_nodes[0],
-        # #                            filter_size=(1, 1),
-        # #                            nonlinearity=self.activation,
-        # #                            W=GlorotUniform(gain='relu')))
-        #
-        # dens.append(batch_norm(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
-        #                                       num_filters=self.fc_nodes[0],
-        #                                       filter_size=(1, 1),
-        #                                       nonlinearity=self.activation,
-        #                                       W=GlorotUniform(gain='relu'))))
-        #
-        # for i in range(1, ndens):
-        #
-        #     dens.append(Conv2DDNNLayer(dropout(dens[i-1], p=self.dropout_rate),
-        #                                num_filters=self.fc_nodes[i],
-        #                                filter_size=(1, 1),
-        #                                nonlinearity=self.activation,
-        #                                W=GlorotUniform(gain='relu')))
-        #
-        # self.dense_layers = dens
-        #
-        # shape = get_output_shape(dens[ndens-1])
-        #
-        # shuffle = DimshuffleLayer(self.dense_layers[ndens-1], pattern=(0, 2, 3, 1))
+        ndens = len(self.fc_nodes)
+        dens = []
+        # dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
+        #                            num_filters=self.fc_nodes[0],
+        #                            filter_size=(1, 1),
+        #                            nonlinearity=self.activation,
+        #                            W=GlorotUniform(gain='relu')))
 
-        shape = get_output_shape(feature_layer)
-        shuffle = DimshuffleLayer(feature_layer, pattern=(0, 2, 3, 1))
+        dens.append(batch_norm(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
+                                              num_filters=self.fc_nodes[0],
+                                              filter_size=(1, 1),
+                                              nonlinearity=self.activation,
+                                              W=GlorotUniform(gain='relu'))))
+
+        for i in range(1, ndens):
+
+            dens.append(Conv2DDNNLayer(dropout(dens[i-1], p=self.dropout_rate),
+                                       num_filters=self.fc_nodes[i],
+                                       filter_size=(1, 1),
+                                       nonlinearity=self.activation,
+                                       W=GlorotUniform(gain='relu')))
+
+        self.dense_layers = dens
+
+        shape = get_output_shape(dens[ndens-1])
+
+        shuffle = DimshuffleLayer(self.dense_layers[ndens-1], pattern=(0, 2, 3, 1))
+
+        # shape = get_output_shape(feature_layer)
+        # shuffle = DimshuffleLayer(feature_layer, pattern=(0, 2, 3, 1))
 
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
 
-        self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.2),
-                                  num_units=self.num_classes,
-                                  nonlinearity=softmax))
-        # self.softmax = DenseLayer(dropout(reshape, p=0.),
+        # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.2),
         #                           num_units=self.num_classes,
-        #                           nonlinearity=softmax)
+        #                           nonlinearity=softmax))
+        self.softmax = DenseLayer(dropout(reshape, p=self.dropout_rate),
+                                  num_units=self.num_classes,
+                                  nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(self.batch_size, self.num_classes) + shape[2:])
