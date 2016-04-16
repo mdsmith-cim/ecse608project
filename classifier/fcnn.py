@@ -556,22 +556,22 @@ class FCNN(object):
         b = b.flatten()
         l_loc_c11 = DenseLayer(c11_slice, num_units=6, W=Constant(0.0), nonlinearity=None)
         # l_loc_c11.add_param(W, (1,), trainable=False)
-        l_loc_c11.add_param(b, b.shape, trainable=False)
+        l_loc_c11.add_param(l_loc_c11.b, l_loc_c11.b.get_value().shape, trainable=False)
         c11_up = TransformerLayer(c11_slice, l_loc_c11, downsample_factor=0.5)
 
         l_loc_c22 = DenseLayer(c22_slice, num_units=6, W=Constant(0.0), nonlinearity=None)
         # l_loc_c22.add_param(W, W.get_value().shape, trainable=False)
-        l_loc_c22.add_param(b, b.shape, trainable=False)
+        l_loc_c22.add_param(l_loc_c22.b, l_loc_c22.b.get_value().shape, trainable=False)
         c22_up = TransformerLayer(c22_slice, l_loc_c22, downsample_factor=0.25)
 
         l_loc_c32 = DenseLayer(c32_slice, num_units=6, W=Constant(0.0), nonlinearity=None)
         # l_loc_c32.add_param(W, W.get_value().shape, trainable=False)
-        l_loc_c32.add_param(b, b.shape, trainable=False)
+        l_loc_c32.add_param(l_loc_c32.b, l_loc_c32.b.get_value().shape, trainable=False)
         c32_up = TransformerLayer(c32_slice, l_loc_c32, downsample_factor=0.125)
 
-        l_loc_c42 = DenseLayer(c42_slice, num_units=6,  W=Constant(0.0),nonlinearity=None)
+        l_loc_c42 = DenseLayer(c42_slice, num_units=6,  W=Constant(0.0), nonlinearity=None)
         # l_loc_c42.add_param(W, W.get_value().shape, trainable=False)
-        l_loc_c42.add_param(b, b.shape, trainable=False)
+        l_loc_c42.add_param(l_loc_c42.b, l_loc_c42.b.get_value().shape, trainable=False)
         c42_up = TransformerLayer(c42_slice, l_loc_c42, downsample_factor=0.0625)
 
         feature_layer = concat((c01_slice,
