@@ -25,7 +25,7 @@ class FCNN(object):
     def __init__(self, conv_nodes=[64], fc_nodes=[256, 128], learning_rate=0.001,
                  num_epochs=10, dropout_rate=0.5, batch_size=1,
                  learning_rate_decay=0.95, activation=rectify, validate_pct=0.1, momentum=0.9,
-                 l1_penalty=1e-6, l2_penalty=1e-4, num_classes=21, f=2,
+                 l1_penalty=0., l2_penalty=5e-4, num_classes=21, f=2,
                  filter_size=(3, 3), num_channels=3, patch_size=(224, 224),
                  verbose=False, refine=False):
 
@@ -69,8 +69,8 @@ class FCNN(object):
         # self.l2 = []
         self.build_net()
         self.l1 = regularize_layer_params(self.softmax, l1)*l1_penalty
-        self.l2 = regularize_layer_params(self.softmax, l2)*l2_penalty
-        # self.l2 = regularize_network_params(self.network, l2)*l2_penalty
+        # self.l2 = regularize_layer_params(self.softmax, l2)*l2_penalty
+        self.l2 = regularize_network_params(self.network, l2)*l2_penalty
         # self.l2 = regularize_layer_params(self.dense_layers[:-1], l2) * l2_penalty
         # self.l2_out = regularize_layer_params(self.softmax, l2) * 1e-4
         self.build_train_fn()
@@ -593,7 +593,7 @@ class FCNN(object):
         # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.2),
         #                           num_units=self.num_classes,
         #                           nonlinearity=softmax))
-        self.softmax = DenseLayer(dropout(reshape, p=self.dropout_rate),
+        self.softmax = DenseLayer(dropout(reshape, p=0.),
                                   num_units=self.num_classes,
                                   nonlinearity=softmax)
 
@@ -638,7 +638,7 @@ class FCNN(object):
             valid = range(out.shape[0])
 
             if shuffle:
-                # valid = np.random.choice(valid[0], int(valid[0].shape[0]*0.1), replace=False)
+                valid = np.random.choice(valid[0], int(valid[0].shape[0]*0.25), replace=False)
                 np.random.shuffle(valid)
 
             out = out[valid]
