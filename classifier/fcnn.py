@@ -493,48 +493,48 @@ class FCNN(object):
         c42.add_param(c42.W, c42.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
         c42.add_param(c42.b, c42.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
-        p4 = MaxPool2DDNNLayer(c42,
-                               pool_size=2)
-
-        c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
-                             num_filters=4096,
-                             filter_size=(7, 7),
-                             nonlinearity=self.activation,
-                             W=GlorotUniform(gain='relu'))
-
-        c50.add_param(c50.W, c50.W.get_value().shape, trainable=self.refine)
-        c50.add_param(c50.b, c50.b.get_value().shape, trainable=self.refine)
-
-        c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
-                             num_filters=4096,
-                             filter_size=(1, 1),
-                             nonlinearity=self.activation,
-                             W=GlorotUniform(gain='relu'))
-
-        c51.add_param(c51.W, c51.W.get_value().shape, trainable=self.refine)
-        c51.add_param(c51.b, c51.b.get_value().shape, trainable=self.refine)
-
-        c52 = Conv2DDNNLayer(c51,
-                             num_filters=1000,
-                             filter_size=(1, 1),
-                             nonlinearity=self.activation,
-                             W=GlorotUniform(gain='relu'))
-
-        c52.add_param(c52.W, c52.W.get_value().shape, trainable=self.refine)
-        c52.add_param(c52.b, c52.b.get_value().shape, trainable=self.refine)
-
-        c53 = Conv2DDNNLayer(c52,
-                             num_filters=21,
-                             filter_size=(1, 1),
-                             nonlinearity=self.activation,
-                             W=GlorotUniform(gain='relu'))
+        # p4 = MaxPool2DDNNLayer(c42,
+        #                        pool_size=2)
+        #
+        # c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
+        #                      num_filters=4096,
+        #                      filter_size=(7, 7),
+        #                      nonlinearity=self.activation,
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c50.add_param(c50.W, c50.W.get_value().shape, trainable=self.refine)
+        # c50.add_param(c50.b, c50.b.get_value().shape, trainable=self.refine)
+        #
+        # c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
+        #                      num_filters=4096,
+        #                      filter_size=(1, 1),
+        #                      nonlinearity=self.activation,
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c51.add_param(c51.W, c51.W.get_value().shape, trainable=self.refine)
+        # c51.add_param(c51.b, c51.b.get_value().shape, trainable=self.refine)
+        #
+        # c52 = Conv2DDNNLayer(c51,
+        #                      num_filters=1000,
+        #                      filter_size=(1, 1),
+        #                      nonlinearity=self.activation,
+        #                      W=GlorotUniform(gain='relu'))
+        #
+        # c52.add_param(c52.W, c52.W.get_value().shape, trainable=self.refine)
+        # c52.add_param(c52.b, c52.b.get_value().shape, trainable=self.refine)
+        #
+        # c53 = Conv2DDNNLayer(c52,
+        #                      num_filters=21,
+        #                      filter_size=(1, 1),
+        #                      nonlinearity=self.activation,
+        #                      W=GlorotUniform(gain='relu'))
 
         # input_slice = SliceLayer(input_layer, indices=slice(80, 80 + 64), axis=2)
         # input_slice = SliceLayer(input_slice, indices=slice(80, 80 + 64), axis=3)
 
         c01_slice = SliceLayer(c01, indices=slice(80, 80 + 64), axis=2)
         c01_slice = SliceLayer(c01_slice, indices=slice(80, 80 + 64), axis=3)
-        c01_slice = Conv2DDNNLayer(c01_slice,
+        c01_slice = Conv2DDNNLayer(batch_norm(c01_slice),
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -542,7 +542,7 @@ class FCNN(object):
 
         c11_slice = SliceLayer(c11, indices=slice(40, 40 + 32), axis=2)
         c11_slice = SliceLayer(c11_slice, indices=slice(40, 40 + 32), axis=3)
-        c11_slice = Conv2DDNNLayer(c11_slice,
+        c11_slice = Conv2DDNNLayer(batch_norm(c11_slice),
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -550,7 +550,7 @@ class FCNN(object):
 
         c22_slice = SliceLayer(c22, indices=slice(20, 20 + 16), axis=2)
         c22_slice = SliceLayer(c22_slice, indices=slice(20, 20 + 16), axis=3)
-        c22_slice = Conv2DDNNLayer(c22_slice,
+        c22_slice = Conv2DDNNLayer(batch_norm(c22_slice),
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -558,7 +558,7 @@ class FCNN(object):
 
         c32_slice = SliceLayer(c32, indices=slice(10, 10 + 8), axis=2)
         c32_slice = SliceLayer(c32_slice, indices=slice(10, 10 + 8), axis=3)
-        c32_slice = Conv2DDNNLayer(c32_slice,
+        c32_slice = Conv2DDNNLayer(batch_norm(c32_slice),
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -566,7 +566,7 @@ class FCNN(object):
 
         c42_slice = SliceLayer(c42, indices=slice(5, 5 + 4), axis=2)
         c42_slice = SliceLayer(c42_slice, indices=slice(5, 5 + 4), axis=3)
-        c42_slice = Conv2DDNNLayer(c42_slice,
+        c42_slice = Conv2DDNNLayer(batch_norm(c42_slice),
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -612,8 +612,7 @@ class FCNN(object):
                                 c11_up,
                                 c22_up,
                                 c32_up,
-                                c42_up,
-                                Upscale2DLayer(c53, scale_factor=64)))
+                                c42_up))
 
 
         # feature_layer = concat((c01_slice,
@@ -656,12 +655,12 @@ class FCNN(object):
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
 
-        self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
-                                  num_units=self.num_classes,
-                                  nonlinearity=softmax))
-        # self.softmax = DenseLayer(dropout(reshape, p=0.),
+        # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
         #                           num_units=self.num_classes,
-        #                           nonlinearity=softmax)
+        #                           nonlinearity=softmax))
+        self.softmax = DenseLayer(dropout(reshape, p=0.),
+                                  num_units=self.num_classes,
+                                  nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(self.batch_size, self.num_classes) + shape[2:])
