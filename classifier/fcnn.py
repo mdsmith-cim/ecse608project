@@ -348,7 +348,7 @@ class FCNN(object):
 
     def build_net(self):
 
-        input_layer = InputLayer(shape=(None, self.num_channels) + self.patch_size,
+        input_layer = InputLayer(shape=(self.batch_size, self.num_channels) + self.patch_size,
                                  input_var=self.input_var)
 
         c00 = Conv2DDNNLayer(input_layer,
@@ -662,10 +662,8 @@ class FCNN(object):
         #                           num_units=self.num_classes,
         #                           nonlinearity=softmax)
 
-        sh = get_output_shape(input_layer)
-
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
-                                    shape=(None, self.num_classes) + shape[2:])
+                                    shape=(self.batch_size, self.num_classes) + shape[2:])
 
     def iterate_minibatches(self, inputs, targets, batch_size, shuffle=False):
 
@@ -714,14 +712,12 @@ class FCNN(object):
             inner_indices = range(out.shape[0])
             np.random.shuffle(inner_indices)
 
-            yield out[inner_indices], out_targets[inner_indices, :, 80:-80, 80:-80].reshape((-1,))
+            for i in inner_indices:
 
-            # for i in inner_indices:
-            #
-            #     tars = out_targets[i:i+1, :, 80:-80, 80:-80]
-            #     tars = tars.reshape((-1,))
-            #
-            #     yield out[i:i+1], tars
+                tars = out_targets[i:i+1, :, 80:-80, 80:-80]
+                tars = tars.reshape((-1,))
+
+                yield out[i:i+1], tars
 
     def iterate_minibatches_test(self, inputs, batchsize, shuffle=False):
 
