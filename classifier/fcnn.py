@@ -586,11 +586,11 @@ class FCNN(object):
         l_loc_c42.add_param(l_loc_c42.b, l_loc_c42.b.get_value().shape, trainable=False)
         c42_up = TransformerLayer(c42_slice, l_loc_c42, downsample_factor=0.0625)
 
-        feature_layer = concat((c01_slice,
-                                c11_up,
-                                c22_up,
-                                c32_up,
-                                c42_up))
+        feature_layer = concat((Conv2DDNNLayer(c01_slice, num_filters=21, filter_size=(1,1), nonlinearity=self.activation, W=GlorotUniform(gain='relu')),
+                                Conv2DDNNLayer(c11_up, num_filters=21, filter_size=(1,1), nonlinearity=self.activation, W=GlorotUniform(gain='relu')),
+                                Conv2DDNNLayer(c22_up, num_filters=21, filter_size=(1,1), nonlinearity=self.activation, W=GlorotUniform(gain='relu')),
+                                Conv2DDNNLayer(c32_up, num_filters=21, filter_size=(1,1), nonlinearity=self.activation, W=GlorotUniform(gain='relu')),
+                                Conv2DDNNLayer(c42_up, num_filters=21, filter_size=(1,1), nonlinearity=self.activation, W=GlorotUniform(gain='relu'))))
 
 
         # feature_layer = concat((c01_slice,
@@ -681,7 +681,7 @@ class FCNN(object):
             valid = range(out.shape[0])
 
             if shuffle:
-                # valid = np.random.choice(valid, int(len(valid)*0.25), replace=False)
+                valid = np.random.choice(valid, int(len(valid)*0.25), replace=False)
                 np.random.shuffle(valid)
 
             out = out[valid]
