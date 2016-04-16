@@ -534,7 +534,7 @@ class FCNN(object):
 
         c01_slice = SliceLayer(c01, indices=slice(80, 80 + 64), axis=2)
         c01_slice = SliceLayer(c01_slice, indices=slice(80, 80 + 64), axis=3)
-        c01_slice = Conv2DDNNLayer(batch_norm(c01_slice),
+        c01_slice = Conv2DDNNLayer(c01_slice,
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -542,7 +542,7 @@ class FCNN(object):
 
         c11_slice = SliceLayer(c11, indices=slice(40, 40 + 32), axis=2)
         c11_slice = SliceLayer(c11_slice, indices=slice(40, 40 + 32), axis=3)
-        c11_slice = Conv2DDNNLayer(batch_norm(c11_slice),
+        c11_slice = Conv2DDNNLayer(c11_slice,
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -550,7 +550,7 @@ class FCNN(object):
 
         c22_slice = SliceLayer(c22, indices=slice(20, 20 + 16), axis=2)
         c22_slice = SliceLayer(c22_slice, indices=slice(20, 20 + 16), axis=3)
-        c22_slice = Conv2DDNNLayer(batch_norm(c22_slice),
+        c22_slice = Conv2DDNNLayer(c22_slice,
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -558,7 +558,7 @@ class FCNN(object):
 
         c32_slice = SliceLayer(c32, indices=slice(10, 10 + 8), axis=2)
         c32_slice = SliceLayer(c32_slice, indices=slice(10, 10 + 8), axis=3)
-        c32_slice = Conv2DDNNLayer(batch_norm(c32_slice),
+        c32_slice = Conv2DDNNLayer(c32_slice,
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -566,7 +566,7 @@ class FCNN(object):
 
         c42_slice = SliceLayer(c42, indices=slice(5, 5 + 4), axis=2)
         c42_slice = SliceLayer(c42_slice, indices=slice(5, 5 + 4), axis=3)
-        c42_slice = Conv2DDNNLayer(batch_norm(c42_slice),
+        c42_slice = Conv2DDNNLayer(c42_slice,
                                    num_filters=21,
                                    filter_size=(1, 1),
                                    nonlinearity=self.activation,
@@ -655,12 +655,12 @@ class FCNN(object):
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
 
-        # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
-        #                           num_units=self.num_classes,
-        #                           nonlinearity=softmax))
-        self.softmax = DenseLayer(dropout(reshape, p=0.),
+        self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
                                   num_units=self.num_classes,
-                                  nonlinearity=softmax)
+                                  nonlinearity=softmax))
+        # self.softmax = DenseLayer(dropout(reshape, p=0.),
+        #                           num_units=self.num_classes,
+        #                           nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(self.batch_size, self.num_classes) + shape[2:])
