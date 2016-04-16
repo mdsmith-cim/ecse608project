@@ -639,7 +639,7 @@ class FCNN(object):
             print valid
 
             if shuffle:
-                valid = np.random.choice(valid[0], int(valid[0].shape[0]*0.25), replace=False)
+                valid = np.random.choice(valid, int(len(valid)*0.25), replace=False)
                 np.random.shuffle(valid)
 
             out = out[valid]
