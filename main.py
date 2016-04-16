@@ -1,6 +1,7 @@
 import features as ft
 import load_data as ld
-import svm
+#import svm
+import logistic
 
 #import set_db_location as sdbl
 
@@ -14,6 +15,7 @@ def main():
     hogTrain, trainLabelsV, hogTest, testLabelsV = ft.calculateFeatures(trainData, trainLabels, testData, testLabels)
 
     #svm.runSVM(hogTrain, trainLabelsV, hogTest, testLabelsV)
+    logistic.runLogistic(hogTrain, trainLabelsV, hogTest, testLabelsV)
 if __name__ == "__main__":
     main()
     # Things to do
