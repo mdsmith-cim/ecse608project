@@ -523,7 +523,7 @@ class FCNN(object):
         c52.add_param(c52.W, c52.W.get_value().shape, trainable=self.refine)
         c52.add_param(c52.b, c52.b.get_value().shape, trainable=self.refine)
 
-        c53 = Conv2DDNNLayer(c51,
+        c53 = Conv2DDNNLayer(c52,
                              num_filters=21,
                              filter_size=(1, 1),
                              nonlinearity=self.activation,
