@@ -636,7 +636,7 @@ class FCNN(object):
             out = np.float32(self.extract_patches(input, self.extraction_step))
             out_targets = np.int32(self.extract_patches(target, self.extraction_step))
             valid = range(out.shape[0])
-            print valid[0]
+            print valid
 
             if shuffle:
                 valid = np.random.choice(valid[0], int(valid[0].shape[0]*0.25), replace=False)
