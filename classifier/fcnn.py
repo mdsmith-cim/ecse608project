@@ -550,26 +550,38 @@ class FCNN(object):
         #                         Upscale2DLayer(c42_slice, scale_factor=16),
         #                         Upscale2DLayer(c52, scale_factor=64)))
 
-        b = np.zeros((2, 3), dtype='float32')
-        b[0, 0] = 1
-        b[1, 1] = 1
-        b = b.flatten()
-        l_loc_c11 = DenseLayer(c11_slice, num_units=6, W=Constant(0.0), b=np.copy(b), nonlinearity=None)
+        b_11 = np.zeros((2, 3), dtype='float32')
+        b_11[0, 0] = 1
+        b_11[1, 1] = 1
+        b_11 = b_11.flatten()
+        l_loc_c11 = DenseLayer(c11_slice, num_units=6, W=Constant(0.0), b=b_11, nonlinearity=None)
         l_loc_c11.add_param(l_loc_c11.W, l_loc_c11.W.get_value().shape, trainable=False)
         l_loc_c11.add_param(l_loc_c11.b, l_loc_c11.b.get_value().shape, trainable=False)
         c11_up = TransformerLayer(c11_slice, l_loc_c11, downsample_factor=0.5)
 
-        l_loc_c22 = DenseLayer(c22_slice, num_units=6, W=Constant(0.0), b=np.copy(b), nonlinearity=None)
+        b_22 = np.zeros((2, 3), dtype='float32')
+        b_22[0, 0] = 1
+        b_22[1, 1] = 1
+        b_22 = b_22.flatten()
+        l_loc_c22 = DenseLayer(c22_slice, num_units=6, W=Constant(0.0), b=b_22, nonlinearity=None)
         l_loc_c22.add_param(l_loc_c22.W, l_loc_c22.W.get_value().shape, trainable=False)
         l_loc_c22.add_param(l_loc_c22.b, l_loc_c22.b.get_value().shape, trainable=False)
         c22_up = TransformerLayer(c22_slice, l_loc_c22, downsample_factor=0.25)
 
-        l_loc_c32 = DenseLayer(c32_slice, num_units=6, W=Constant(0.0), b=np.copy(b), nonlinearity=None)
+        b_32 = np.zeros((2, 3), dtype='float32')
+        b_32[0, 0] = 1
+        b_32[1, 1] = 1
+        b_32 = b_32.flatten()
+        l_loc_c32 = DenseLayer(c32_slice, num_units=6, W=Constant(0.0), b=b_32, nonlinearity=None)
         l_loc_c32.add_param(l_loc_c32.W, l_loc_c32.W.get_value().shape, trainable=False)
         l_loc_c32.add_param(l_loc_c32.b, l_loc_c32.b.get_value().shape, trainable=False)
         c32_up = TransformerLayer(c32_slice, l_loc_c32, downsample_factor=0.125)
 
-        l_loc_c42 = DenseLayer(c42_slice, num_units=6,  W=Constant(0.0), b=np.copy(b), nonlinearity=None)
+        b_42 = np.zeros((2, 3), dtype='float32')
+        b_42[0, 0] = 1
+        b_42[1, 1] = 1
+        b_42 = b_42.flatten()
+        l_loc_c42 = DenseLayer(c42_slice, num_units=6,  W=Constant(0.0), b=b_42, nonlinearity=None)
         l_loc_c42.add_param(l_loc_c42.W, l_loc_c42.W.get_value().shape, trainable=False)
         l_loc_c42.add_param(l_loc_c42.b, l_loc_c42.b.get_value().shape, trainable=False)
         c42_up = TransformerLayer(c42_slice, l_loc_c42, downsample_factor=0.0625)
