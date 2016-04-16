@@ -655,12 +655,12 @@ class FCNN(object):
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
 
-        # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
-        #                           num_units=self.num_classes,
-        #                           nonlinearity=softmax))
-        self.softmax = DenseLayer(dropout(reshape, p=0.),
+        self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
                                   num_units=self.num_classes,
-                                  nonlinearity=softmax)
+                                  nonlinearity=softmax))
+        # self.softmax = DenseLayer(dropout(reshape, p=0.),
+        #                           num_units=self.num_classes,
+        #                           nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(self.batch_size, self.num_classes) + shape[2:])
