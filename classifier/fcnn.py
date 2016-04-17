@@ -400,7 +400,7 @@ class FCNN(object):
         shuffle = DimshuffleLayer(sum_543_up, pattern=(0, 2, 3, 1))
 
         reshape = ReshapeLayer(shuffle,
-                               shape=(np.prod(np.array(shape)[2:]), shape[1]))
+                               shape=(np.prod(np.array(shape)[2:])*10, shape[1]))
 
         self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
                                   num_units=self.num_classes,
