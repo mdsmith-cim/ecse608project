@@ -466,7 +466,7 @@ class FCNN(object):
             valid = range(out.shape[0])
 
             if shuffle:
-                valid = np.random.choice(valid, int(len(valid)*0.25), replace=False)
+                valid = np.random.choice(valid, int(len(valid)*0.1), replace=False)
                 np.random.shuffle(valid)
 
             out = out[valid]
