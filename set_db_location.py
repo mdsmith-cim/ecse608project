@@ -1,7 +1,7 @@
 import ConfigParser
 import socket
 
-
+# Use this only to create config file
 def setDBLocation():
     hostname = socket.gethostname()
     config = ConfigParser.SafeConfigParser()
