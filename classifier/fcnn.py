@@ -399,6 +399,8 @@ class FCNN(object):
                                    W=Constant(1./16.),
                                    nonlinearity=linear)
 
+        print get_output_shape(sum_54_up)
+
         sum_543 = ElemwiseSumLayer((sum_54_up, c33_slice))
 
         sum_543_up = Upscale2DLayer(sum_543, 8)
