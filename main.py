@@ -1,6 +1,7 @@
 import features as ft
 import load_data as ld
 from basicClassifier.bscCls import BasicClassifier
+import gc
 #import set_db_location as sdbl
 
 def main():
@@ -14,9 +15,11 @@ def main():
 
     cls = BasicClassifier('randomForest')
     cls.trainModel(hogTrain, trainLabelsV)
+    gc.collect()
 
     cls.saveToDisk('rndForest.dat')
-
+    gc.collect()
+    
     print "Calculating score..."
     cls.printScore(hogTest, testLabelsV)
 
