@@ -466,7 +466,7 @@ class FCNN(object):
 
             for idx in range(0, out.shape[0] - 50 + 1, 50):
 
-                e = inner_indices[idx:idx+10]
+                e = inner_indices[idx:idx+50]
                 tars = out_targets[e, :, 96:-96, 96:-96]
                 tars = tars.reshape((-1,))
 
