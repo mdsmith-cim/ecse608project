@@ -47,4 +47,5 @@ def load_images(imageset='train', database='voc2011'):
     for i in labels:
         i[i == 255] = 0
 
+    print "Loaded %i labels" % len(labels)
     return collection, labels
