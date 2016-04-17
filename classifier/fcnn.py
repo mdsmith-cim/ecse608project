@@ -196,7 +196,7 @@ class FCNN(object):
 
     def build_net(self):
 
-        input_layer = InputLayer(shape=(50, self.num_channels) + self.patch_size,
+        input_layer = InputLayer(shape=(22, self.num_channels) + self.patch_size,
                                  input_var=self.input_var)
 
         c00 = Conv2DDNNLayer(input_layer,
@@ -450,7 +450,7 @@ class FCNN(object):
             valid = range(out.shape[0])
 
             if shuffle:
-                # valid = np.random.choice(valid, int(len(valid)*0.25), replace=False)
+                valid = np.random.choice(valid, int(len(valid)*0.25), replace=False)
                 np.random.shuffle(valid)
 
             out = out[valid]
@@ -464,9 +464,9 @@ class FCNN(object):
             #
             # yield out, tars
 
-            for idx in range(0, out.shape[0] - 50 + 1, 50):
+            for idx in range(0, out.shape[0] - 22 + 1, 22):
 
-                e = inner_indices[idx:idx+50]
+                e = inner_indices[idx:idx+22]
                 tars = out_targets[e, :, 96:-96, 96:-96]
                 tars = tars.reshape((-1,))
 
