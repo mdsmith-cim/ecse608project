@@ -196,7 +196,7 @@ class FCNN(object):
 
     def build_net(self):
 
-        input_layer = InputLayer(shape=(10, self.num_channels) + self.patch_size,
+        input_layer = InputLayer(shape=(None, self.num_channels) + self.patch_size,
                                  input_var=self.input_var)
 
         c00 = Conv2DDNNLayer(input_layer,
@@ -400,7 +400,7 @@ class FCNN(object):
         shuffle = DimshuffleLayer(sum_543_up, pattern=(0, 2, 3, 1))
 
         reshape = ReshapeLayer(shuffle,
-                               shape=(np.prod(np.array(shape)[2:])*10, shape[1]))
+                               shape=(np.prod(np.array(shape)[2:])*shape[0], shape[1]))
 
         self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
                                   num_units=self.num_classes,
@@ -410,7 +410,7 @@ class FCNN(object):
         #                           nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
-                                    shape=(10, self.num_classes) + shape[2:])
+                                    shape=(shape[0], self.num_classes) + shape[2:])
 
     def iterate_minibatches(self, inputs, targets, batch_size, shuffle=False):
 
@@ -459,13 +459,18 @@ class FCNN(object):
             inner_indices = range(out.shape[0])
             np.random.shuffle(inner_indices)
 
-            for idx in range(0, out.shape[0] - 10 + 1, 10):
+            tars = out_targets[:, :, 96:-96, 96:-96]
+            tars = tars.reshape((-1,))
 
-                e = inner_indices[idx:idx+10]
-                tars = out_targets[e, :, 96:-96, 96:-96]
-                tars = tars.reshape((-1,))
+            yield out, tars
 
-                yield out[e], tars
+            # for idx in range(0, out.shape[0] - 10 + 1, 10):
+            #
+            #     e = inner_indices[idx:idx+10]
+            #     tars = out_targets[e, :, 96:-96, 96:-96]
+            #     tars = tars.reshape((-1,))
+            #
+            #     yield out[e], tars
 
             # for i in inner_indices:
             #
