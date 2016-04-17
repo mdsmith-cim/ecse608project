@@ -397,6 +397,7 @@ class FCNN(object):
                                    filter_size=(4, 4),
                                    stride=(2, 2),
                                    W=Constant(1./16.),
+                                   flip_filters=False,
                                    nonlinearity=linear)
 
         print get_output_shape(sum_54_up)
