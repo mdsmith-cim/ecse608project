@@ -8,10 +8,10 @@ import theano
 import theano.tensor as T
 
 from lasagne.layers import DenseLayer, InputLayer, ReshapeLayer, DimshuffleLayer, \
-    concat, TransformerLayer, SliceLayer
-from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, Upscale2DLayer, batch_norm
+    concat, TransformerLayer, SliceLayer, ElemwiseSumLayer
+from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, batch_norm, Upscale2DLayer
 from lasagne.layers.dnn import Conv2DDNNLayer, MaxPool2DDNNLayer
-from lasagne.nonlinearities import rectify, softmax
+from lasagne.nonlinearities import rectify, softmax, linear
 from lasagne.objectives import aggregate, categorical_crossentropy, categorical_accuracy
 from lasagne.updates import nesterov_momentum
 from lasagne.init import GlorotUniform, Constant
@@ -33,8 +33,7 @@ class FCNN(object):
         self.target_var = T.ivector('targets')
         self.filter_size = filter_size
         self.patch_size = patch_size
-        self.r = len(conv_nodes)*(filter_size[0]/2)
-        self.extraction_step = (1, 1, 64, 64)
+        self.extraction_step = (1, 1, 32, 32)
         self.num_channels = num_channels
         self.num_classes = num_classes
         self.conv_nodes = conv_nodes
@@ -83,8 +82,8 @@ class FCNN(object):
 
         x = np.expand_dims(np.rollaxis(x, 2, 0), axis=0)
         xs, ys = x.shape[2:]
-        xp = 80 + (64 - xs % 64)/2 + 1
-        yp = 80 + (64 - ys % 64)/2 + 1
+        xp = 96 + (32 - xs % 32)/2 + 1
+        yp = 96 + (32 - ys % 32)/2 + 1
 
         x = np.pad(x, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
 
@@ -460,6 +459,15 @@ class FCNN(object):
         c32.add_param(c32.W, c32.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
         c32.add_param(c32.b, c32.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
+        c33 = Conv2DDNNLayer(c32,
+                             num_filters=21,
+                             filter_size=(1, 1),
+                             nonlinearity=linear,
+                             W=GlorotUniform())
+
+        c33_slice = SliceLayer(c33, indices=slice(12, -12), axis=2)
+        c33_slice = SliceLayer(c33_slice, indices=slice(12, -12), axis=3)
+
         p3 = MaxPool2DDNNLayer(c32,
                                pool_size=2)
 
@@ -493,164 +501,54 @@ class FCNN(object):
         c42.add_param(c42.W, c42.W.get_value().shape, trainable=self.refine, regularizable=self.refine)
         c42.add_param(c42.b, c42.b.get_value().shape, trainable=self.refine, regularizable=self.refine)
 
-        # p4 = MaxPool2DDNNLayer(c42,
-        #                        pool_size=2)
-        #
-        # c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
-        #                      num_filters=4096,
-        #                      filter_size=(7, 7),
-        #                      nonlinearity=self.activation,
-        #                      W=GlorotUniform(gain='relu'))
-        #
-        # c50.add_param(c50.W, c50.W.get_value().shape, trainable=self.refine)
-        # c50.add_param(c50.b, c50.b.get_value().shape, trainable=self.refine)
-        #
-        # c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
-        #                      num_filters=4096,
-        #                      filter_size=(1, 1),
-        #                      nonlinearity=self.activation,
-        #                      W=GlorotUniform(gain='relu'))
-        #
-        # c51.add_param(c51.W, c51.W.get_value().shape, trainable=self.refine)
-        # c51.add_param(c51.b, c51.b.get_value().shape, trainable=self.refine)
-        #
-        # c52 = Conv2DDNNLayer(c51,
-        #                      num_filters=1000,
-        #                      filter_size=(1, 1),
-        #                      nonlinearity=self.activation,
-        #                      W=GlorotUniform(gain='relu'))
-        #
-        # c52.add_param(c52.W, c52.W.get_value().shape, trainable=self.refine)
-        # c52.add_param(c52.b, c52.b.get_value().shape, trainable=self.refine)
-        #
-        # c53 = Conv2DDNNLayer(c52,
-        #                      num_filters=21,
-        #                      filter_size=(1, 1),
-        #                      nonlinearity=self.activation,
-        #                      W=GlorotUniform(gain='relu'))
+        c43 = Conv2DDNNLayer(c42,
+                             num_filters=21,
+                             filter_size=(1, 1),
+                             nonlinearity=linear,
+                             W=GlorotUniform())
 
-        # input_slice = SliceLayer(input_layer, indices=slice(80, 80 + 64), axis=2)
-        # input_slice = SliceLayer(input_slice, indices=slice(80, 80 + 64), axis=3)
+        c43_slice = SliceLayer(c43, indices=slice(6, -6), axis=2)
+        c43_slice = SliceLayer(c43_slice, indices=slice(6, -6), axis=3)
 
-        c01_slice = SliceLayer(c01, indices=slice(80, 80 + 64), axis=2)
-        c01_slice = SliceLayer(c01_slice, indices=slice(80, 80 + 64), axis=3)
-        c01_slice = Conv2DDNNLayer(c01_slice,
-                                   num_filters=21,
-                                   filter_size=(1, 1),
-                                   nonlinearity=self.activation,
-                                   W=GlorotUniform(gain='relu'))
+        p4 = MaxPool2DDNNLayer(c42,
+                               pool_size=2)
 
-        c11_slice = SliceLayer(c11, indices=slice(40, 40 + 32), axis=2)
-        c11_slice = SliceLayer(c11_slice, indices=slice(40, 40 + 32), axis=3)
-        c11_slice = Conv2DDNNLayer(c11_slice,
-                                   num_filters=21,
-                                   filter_size=(1, 1),
-                                   nonlinearity=self.activation,
-                                   W=GlorotUniform(gain='relu'))
+        c50 = Conv2DDNNLayer(dropout(p4, p=self.dropout_rate),
+                             num_filters=4096,
+                             filter_size=(7, 7),
+                             nonlinearity=self.activation,
+                             W=GlorotUniform(gain='relu'))
 
-        c22_slice = SliceLayer(c22, indices=slice(20, 20 + 16), axis=2)
-        c22_slice = SliceLayer(c22_slice, indices=slice(20, 20 + 16), axis=3)
-        c22_slice = Conv2DDNNLayer(c22_slice,
-                                   num_filters=21,
-                                   filter_size=(1, 1),
-                                   nonlinearity=self.activation,
-                                   W=GlorotUniform(gain='relu'))
+        c50.add_param(c50.W, c50.W.get_value().shape, trainable=self.refine)
+        c50.add_param(c50.b, c50.b.get_value().shape, trainable=self.refine)
 
-        c32_slice = SliceLayer(c32, indices=slice(10, 10 + 8), axis=2)
-        c32_slice = SliceLayer(c32_slice, indices=slice(10, 10 + 8), axis=3)
-        c32_slice = Conv2DDNNLayer(c32_slice,
-                                   num_filters=21,
-                                   filter_size=(1, 1),
-                                   nonlinearity=self.activation,
-                                   W=GlorotUniform(gain='relu'))
+        c51 = Conv2DDNNLayer(dropout(c50, p=self.dropout_rate),
+                             num_filters=4096,
+                             filter_size=(1, 1),
+                             nonlinearity=self.activation,
+                             W=GlorotUniform(gain='relu'))
 
-        c42_slice = SliceLayer(c42, indices=slice(5, 5 + 4), axis=2)
-        c42_slice = SliceLayer(c42_slice, indices=slice(5, 5 + 4), axis=3)
-        c42_slice = Conv2DDNNLayer(c42_slice,
-                                   num_filters=21,
-                                   filter_size=(1, 1),
-                                   nonlinearity=self.activation,
-                                   W=GlorotUniform(gain='relu'))
+        c51.add_param(c51.W, c51.W.get_value().shape, trainable=self.refine)
+        c51.add_param(c51.b, c51.b.get_value().shape, trainable=self.refine)
 
-        b_11 = np.zeros((2, 3), dtype='float32')
-        b_11[0, 0] = 1
-        b_11[1, 1] = 1
-        b_11 = b_11.flatten()
-        l_loc_c11 = DenseLayer(c11_slice, num_units=6, W=Constant(0.0), b=b_11, nonlinearity=None)
-        l_loc_c11.add_param(l_loc_c11.W, l_loc_c11.W.get_value().shape, trainable=False)
-        l_loc_c11.add_param(l_loc_c11.b, l_loc_c11.b.get_value().shape, trainable=False)
-        c11_up = TransformerLayer(c11_slice, l_loc_c11, downsample_factor=0.5)
+        c52 = Conv2DDNNLayer(c51,
+                             num_filters=21,
+                             filter_size=(1, 1),
+                             nonlinearity=linear,
+                             W=GlorotUniform())
 
-        b_22 = np.zeros((2, 3), dtype='float32')
-        b_22[0, 0] = 1
-        b_22[1, 1] = 1
-        b_22 = b_22.flatten()
-        l_loc_c22 = DenseLayer(c22_slice, num_units=6, W=Constant(0.0), b=b_22, nonlinearity=None)
-        l_loc_c22.add_param(l_loc_c22.W, l_loc_c22.W.get_value().shape, trainable=False)
-        l_loc_c22.add_param(l_loc_c22.b, l_loc_c22.b.get_value().shape, trainable=False)
-        c22_up = TransformerLayer(c22_slice, l_loc_c22, downsample_factor=0.25)
+        c52_up = Upscale2DLayer(c52, 2)
 
-        b_32 = np.zeros((2, 3), dtype='float32')
-        b_32[0, 0] = 1
-        b_32[1, 1] = 1
-        b_32 = b_32.flatten()
-        l_loc_c32 = DenseLayer(c32_slice, num_units=6, W=Constant(0.0), b=b_32, nonlinearity=None)
-        l_loc_c32.add_param(l_loc_c32.W, l_loc_c32.W.get_value().shape, trainable=False)
-        l_loc_c32.add_param(l_loc_c32.b, l_loc_c32.b.get_value().shape, trainable=False)
-        c32_up = TransformerLayer(c32_slice, l_loc_c32, downsample_factor=0.125)
+        sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
 
-        b_42 = np.zeros((2, 3), dtype='float32')
-        b_42[0, 0] = 1
-        b_42[1, 1] = 1
-        b_42 = b_42.flatten()
-        l_loc_c42 = DenseLayer(c42_slice, num_units=6,  W=Constant(0.0), b=b_42, nonlinearity=None)
-        l_loc_c42.add_param(l_loc_c42.W, l_loc_c42.W.get_value().shape, trainable=False)
-        l_loc_c42.add_param(l_loc_c42.b, l_loc_c42.b.get_value().shape, trainable=False)
-        c42_up = TransformerLayer(c42_slice, l_loc_c42, downsample_factor=0.0625)
+        sum_54_up = Upscale2DLayer(sum_54, 2)
 
-        feature_layer = concat((c01_slice,
-                                c11_up,
-                                c22_up,
-                                c32_up,
-                                c42_up))
+        sum_543 = ElemwiseSumLayer((sum_54_up, c33_slice))
 
+        sum_543_up = Upscale2DLayer(sum_543, 8)
 
-        # feature_layer = concat((c01_slice,
-        #                         Upscale2DLayer(c11_slice, scale_factor=2),
-        #                         Upscale2DLayer(c22_slice, scale_factor=4),
-        #                         Upscale2DLayer(c32_slice, scale_factor=8),
-        #                         Upscale2DLayer(c42_slice, scale_factor=16)))
-
-        # ndens = len(self.fc_nodes)
-        # dens = []
-        # # dens.append(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
-        # #                            num_filters=self.fc_nodes[0],
-        # #                            filter_size=(1, 1),
-        # #                            nonlinearity=self.activation,
-        # #                            W=GlorotUniform(gain='relu')))
-        #
-        # dens.append(batch_norm(Conv2DDNNLayer(dropout(feature_layer, p=self.dropout_rate),
-        #                                       num_filters=self.fc_nodes[0],
-        #                                       filter_size=(1, 1),
-        #                                       nonlinearity=self.activation,
-        #                                       W=GlorotUniform(gain='relu'))))
-        #
-        # for i in range(1, ndens):
-        #
-        #     dens.append(Conv2DDNNLayer(dropout(dens[i-1], p=self.dropout_rate),
-        #                                num_filters=self.fc_nodes[i],
-        #                                filter_size=(1, 1),
-        #                                nonlinearity=self.activation,
-        #                                W=GlorotUniform(gain='relu')))
-        #
-        # self.dense_layers = dens
-        #
-        # shape = get_output_shape(dens[ndens-1])
-        #
-        # shuffle = DimshuffleLayer(self.dense_layers[ndens-1], pattern=(0, 2, 3, 1))
-
-        shape = get_output_shape(feature_layer)
-        shuffle = DimshuffleLayer(feature_layer, pattern=(0, 2, 3, 1))
+        shape = get_output_shape(sum_543_up)
+        shuffle = DimshuffleLayer(sum_543_up, pattern=(0, 2, 3, 1))
 
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:]), shape[1]))
@@ -688,8 +586,8 @@ class FCNN(object):
 
             xs, ys = input.shape[2:]
 
-            xp = 80 + (64 - xs % 64)/2 + 1
-            yp = 80 + (64 - ys % 64)/2 + 1
+            xp = 96 + (32 - xs % 32)/2 + 1
+            yp = 96 + (32 - ys % 32)/2 + 1
 
             input = np.pad(input, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
             target = np.pad(target, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
@@ -714,7 +612,7 @@ class FCNN(object):
 
             for i in inner_indices:
 
-                tars = out_targets[i:i+1, :, 80:-80, 80:-80]
+                tars = out_targets[i:i+1, :, 96:-96, 96:-96]
                 tars = tars.reshape((-1,))
 
                 yield out[i:i+1], tars
@@ -756,15 +654,15 @@ class FCNN(object):
         img = np.zeros(image_size)
         n = np.zeros(image_size)
 
-        n_h = i_h - p_h - 80 + 1
-        n_w = i_w - p_w - 80 + 1
+        n_h = i_h - p_h - 96 + 1
+        n_w = i_w - p_w - 96 + 1
 
         # st_h = (i_h - p_h)/self.f
         # st_w = (i_w - p_w)/self.f
 
         for p, (i, j) in zip(patches,
-                             product(range(80, n_h, p_h),
-                                     range(80, n_w, p_w))):
+                             product(range(96, n_h, p_h),
+                                     range(96, n_w, p_w))):
             img[0, :, i:i + p_h, j:j + p_w] += p
             n[0, :, i:i + p_h, j:j + p_w] += 1
 
