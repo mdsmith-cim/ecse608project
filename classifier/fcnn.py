@@ -314,7 +314,7 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c33_slice = SliceLayer(c33, indices=slice(10, -10), axis=2)
+        c33_slice = SliceLayer(c33, indices=slice(12, -12), axis=2)
         c33_slice = SliceLayer(c33_slice, indices=slice(10, -10), axis=3)
 
         p3 = MaxPool2DDNNLayer(c32,
@@ -356,7 +356,7 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c43_slice = SliceLayer(c43, indices=slice(5, -5), axis=2)
+        c43_slice = SliceLayer(c43, indices=slice(6, -6), axis=2)
         c43_slice = SliceLayer(c43_slice, indices=slice(5, -5), axis=3)
 
         p4 = MaxPool2DDNNLayer(c42,
