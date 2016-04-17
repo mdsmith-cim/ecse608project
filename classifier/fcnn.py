@@ -398,7 +398,7 @@ class FCNN(object):
         l_loc_54 = DenseLayer(sum_54, num_units=6, W=Constant(0), b=b_up_0, nonlinearity=None)
         l_loc_54.add_param(l_loc_54.W, l_loc_54.W.get_value().shape, trainable=False)
         l_loc_54.add_param(l_loc_54.b, l_loc_54.b.get_value().shape, trainable=False)
-        sum_54_up = TransformerLayer(sum_54, l_loc_54, 2)
+        sum_54_up = TransformerLayer(sum_54, l_loc_54, 0.5)
 
         sum_543 = ElemwiseSumLayer((sum_54_up, c33_slice))
 
@@ -410,7 +410,7 @@ class FCNN(object):
         l_loc_543 = DenseLayer(sum_543, num_units=6, W=Constant(0), b=b_up_1, nonlinearity=None)
         l_loc_543.add_param(l_loc_543.W, l_loc_543.W.get_value().shape, trainable=False)
         l_loc_543.add_param(l_loc_543.b, l_loc_543.b.get_value().shape, trainable=False)
-        sum_543_up = TransformerLayer(sum_543, l_loc_543, 8)
+        sum_543_up = TransformerLayer(sum_543, l_loc_543, 0.125)
 
         shape = get_output_shape(sum_543_up)
         shuffle = DimshuffleLayer(sum_543_up, pattern=(0, 2, 3, 1))
