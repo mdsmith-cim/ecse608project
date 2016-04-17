@@ -395,7 +395,8 @@ class FCNN(object):
                                    num_filters=21,
                                    filter_size=(4, 4),
                                    stride=(2, 2),
-                                   pad='full')
+                                   pad='full',
+                                   nonlinearity=linear)
 
         sum_543 = ElemwiseSumLayer((sum_54_up, c33_slice))
 
