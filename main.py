@@ -12,7 +12,5 @@ def main():
     testData, testLabels = ld.load_images('test')
     hogTrain, trainLabelsV, hogTest, testLabelsV = ft.calculateFeatures(trainData, trainLabels, testData, testLabels)
 
-
-
 if __name__ == "__main__":
     main()
