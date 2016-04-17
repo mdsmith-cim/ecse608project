@@ -396,7 +396,6 @@ class FCNN(object):
                                    num_filters=21,
                                    filter_size=(4, 4),
                                    stride=(2, 2),
-                                   pad='full',
                                    W=Constant(1./16.),
                                    nonlinearity=linear)
 
