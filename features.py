@@ -11,6 +11,7 @@ import scipy.misc as scm
 import scipy.ndimage as ndi
 from skimage import color
 from skimage.feature import hog
+import cPickle as pickle
 
 
 # NOTE: We assume pixels_per_cell has the same size in both directions in multiple code locations
@@ -31,11 +32,12 @@ def calculateFeatures(trainData, trainLabels, testData, testLabels, featureType=
             trainFile = np.load(os.path.join(dbLocation, featureType + '_train.npz'))
             testFile = np.load(os.path.join(dbLocation, featureType + '_test.npz'))
 
-            featureSettingsSaved1 = trainFile['featureSettings']
-            featureSettingsSaved2 = testFile['featureSettings']
+            file = open(os.path.join(dbLocation, featureType + '_settings.dat'), 'rb')
+            featureSettingsSaved = pickle.load(file)
+            file.close()
 
-            for k,v in featureSettings.iteritems():
-                if featureSettingsSaved1[k] != v or featureSettingsSaved2[k] != v:
+            for k, v in featureSettings.iteritems():
+                if featureSettingsSaved[k] != v:
                     raise Exception('Feature settings for saved data do not match request')
 
             hogTrain = trainFile['hogTrain']
@@ -97,9 +99,13 @@ def calculateFeatures(trainData, trainLabels, testData, testLabels, featureType=
             print "Saving data to disk..."
 
             np.savez_compressed(os.path.join(dbLocation, featureType + '_train.npz'), hogTrain=hogTrain,
-                                trainLabels=trainLabelsR, featureSettings=featureSettings)
+                                trainLabels=trainLabelsR)
             np.savez_compressed(os.path.join(dbLocation, featureType + '_test.npz'), hogTest=hogTest,
-                                testLabels=testLabelsR, featureSettings=featureSettings)
+                                testLabels=testLabelsR)
+
+            file = open(os.path.join(dbLocation, featureType + '_settings.dat'), 'wb')
+            pickle.dump(featureSettings, file, protocol=pickle.HIGHEST_PROTOCOL)
+            file.close()
 
             print "Data saved."
 
