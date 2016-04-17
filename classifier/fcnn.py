@@ -34,7 +34,7 @@ class FCNN(object):
         self.filter_size = filter_size
         self.patch_size = patch_size
         self.r = len(conv_nodes)*(filter_size[0]/2)
-        self.extraction_step = (1, 1, 64, 64)
+        self.extraction_step = (1, 1, 32, 32)
         self.num_channels = num_channels
         self.num_classes = num_classes
         self.conv_nodes = conv_nodes
@@ -83,8 +83,8 @@ class FCNN(object):
 
         x = np.expand_dims(np.rollaxis(x, 2, 0), axis=0)
         xs, ys = x.shape[2:]
-        xp = 80 + (64 - xs % 64)/2 + 1
-        yp = 80 + (64 - ys % 64)/2 + 1
+        xp = 96 + (32 - xs % 32)/2 + 1
+        yp = 96 + (32 - ys % 32)/2 + 1
 
         x = np.pad(x, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
 
@@ -196,7 +196,7 @@ class FCNN(object):
 
     def build_net(self):
 
-        input_layer = InputLayer(shape=(self.batch_size, self.num_channels) + self.patch_size,
+        input_layer = InputLayer(shape=(10, self.num_channels) + self.patch_size,
                                  input_var=self.input_var)
 
         c00 = Conv2DDNNLayer(input_layer,
@@ -386,21 +386,11 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c52_up = Upscale2DLayer(c52, 4)
+        c52_up = Upscale2DLayer(c52, 2)
 
         sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
-        print get_output_shape(sum_54)
 
-        # sum_54_up = Upscale2DLayer(sum_54, 2)
-        sum_54_up = Conv2DDNNLayer(sum_54,
-                                   num_filters=21,
-                                   filter_size=(4, 4),
-                                   stride=(2, 2),
-                                   W=Constant(1./16.),
-                                   flip_filters=False,
-                                   nonlinearity=linear)
-
-        print get_output_shape(sum_54_up)
+        sum_54_up = Upscale2DLayer(sum_54, 2)
 
         sum_543 = ElemwiseSumLayer((sum_54_up, c33_slice))
 
@@ -420,7 +410,7 @@ class FCNN(object):
         #                           nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
-                                    shape=(self.batch_size, self.num_classes) + shape[2:])
+                                    shape=(10, self.num_classes) + shape[2:])
 
     def iterate_minibatches(self, inputs, targets, batch_size, shuffle=False):
 
@@ -445,8 +435,8 @@ class FCNN(object):
 
             xs, ys = input.shape[2:]
 
-            xp = 80 + (64 - xs % 64)/2 + 1
-            yp = 80 + (64 - ys % 64)/2 + 1
+            xp = 96 + (32 - xs % 32)/2 + 1
+            yp = 96 + (32 - ys % 32)/2 + 1
 
             input = np.pad(input, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
             target = np.pad(target, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
@@ -469,12 +459,20 @@ class FCNN(object):
             inner_indices = range(out.shape[0])
             np.random.shuffle(inner_indices)
 
-            for i in inner_indices:
+            for idx in range(0, out.shape[0] - 10 + 1, 10):
 
-                tars = out_targets[i:i+1, :, 80:-80, 80:-80]
+                e = inner_indices[idx:idx+10]
+                tars = out_targets[e, :, 96:-96, 96:-96]
                 tars = tars.reshape((-1,))
 
-                yield out[i:i+1], tars
+                yield out[e], tars
+
+            # for i in inner_indices:
+            #
+            #     tars = out_targets[i:i+1, :, 96:-96, 96:-96]
+            #     tars = tars.reshape((-1,))
+            #
+            #     yield out[i:i+1], tars
 
     def iterate_minibatches_test(self, inputs, batchsize, shuffle=False):
 
@@ -513,15 +511,15 @@ class FCNN(object):
         img = np.zeros(image_size)
         n = np.zeros(image_size)
 
-        n_h = i_h - p_h - 80 + 1
-        n_w = i_w - p_w - 80 + 1
+        n_h = i_h - p_h - 96 + 1
+        n_w = i_w - p_w - 96 + 1
 
         # st_h = (i_h - p_h)/self.f
         # st_w = (i_w - p_w)/self.f
 
         for p, (i, j) in zip(patches,
-                             product(range(80, n_h, p_h),
-                                     range(80, n_w, p_w))):
+                             product(range(96, n_h, p_h),
+                                     range(96, n_w, p_w))):
             img[0, :, i:i + p_h, j:j + p_w] += p
             n[0, :, i:i + p_h, j:j + p_w] += 1
 
