@@ -389,7 +389,7 @@ class FCNN(object):
         c52_up = Upscale2DLayer(c52, 4)
 
         sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
-        print get_output_shape(sum_54_up)
+        print get_output_shape(sum_54)
 
         # sum_54_up = Upscale2DLayer(sum_54, 2)
         sum_54_up = Conv2DDNNLayer(sum_54,
