@@ -13,13 +13,14 @@ def main():
     testData, testLabels = ld.load_images('test')
     hogTrain, trainLabelsV, hogTest, testLabelsV = ft.calculateFeatures(trainData, trainLabels, testData, testLabels)
 
+    gc.collect()
     cls = BasicClassifier('randomForest')
     cls.trainModel(hogTrain, trainLabelsV)
     gc.collect()
 
     cls.saveToDisk('rndForest.dat')
     gc.collect()
-    
+
     print "Calculating score..."
     cls.printScore(hogTest, testLabelsV)
 
