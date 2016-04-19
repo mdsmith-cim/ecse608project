@@ -391,24 +391,23 @@ class FCNN(object):
 
         sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
 
-        # sum_54_up = Upscale2DLayer(sum_54, 2)
-        # b_up_0 = np.zeros((2, 3), dtype='float32')
-        # b_up_0[0, 0] = 1
-        # b_up_0[1, 1] = 1
-        # b_up_0 = b_up_0.flatten()
-        # l_loc_54 = DenseLayer(sum_54, num_units=6, W=Constant(0), b=b_up_0, nonlinearity=None)
-        # l_loc_54.add_param(l_loc_54.W, l_loc_54.W.get_value().shape, trainable=False)
-        # l_loc_54.add_param(l_loc_54.b, l_loc_54.b.get_value().shape, trainable=False)
-        # sum_54_up = TransformerLayer(sum_54, l_loc_54, 0.5)
+        sum_54_up = Upscale2DLayer(sum_54, 2)
+        b_up_0 = np.zeros((2, 3), dtype='float32')
+        b_up_0[0, 0] = 1
+        b_up_0[1, 1] = 1
+        b_up_0 = b_up_0.flatten()
+        l_loc_54 = DenseLayer(sum_54, num_units=6, W=Constant(0), b=b_up_0, nonlinearity=None)
+        l_loc_54.add_param(l_loc_54.W, l_loc_54.W.get_value().shape, trainable=False)
+        l_loc_54.add_param(l_loc_54.b, l_loc_54.b.get_value().shape, trainable=False)
+        sum_54_up = TransformerLayer(sum_54, l_loc_54, 0.5)
 
-        sum_54_up = Conv2DLayer(PadLayer(sum_54, 2),
-                                num_filters=21,
-                                filter_size=(4, 4),
-                                stride=(2, 2),
-                                W=Constant(1./16.))
-        sum_54_up = InverseLayer(sum_54_up,
-                                 sum_54_up)
-
+        # sum_54_up = Conv2DLayer(PadLayer(sum_54, 2),
+        #                         num_filters=21,
+        #                         filter_size=(4, 4),
+        #                         stride=(2, 2),
+        #                         W=Constant(1./16.))
+        # sum_54_up = InverseLayer(sum_54_up,
+        #                          sum_54_up)
 
         sum_543 = ElemwiseSumLayer((sum_54_up, c33_slice))
 
@@ -438,12 +437,10 @@ class FCNN(object):
         reshape = ReshapeLayer(shuffle,
                                shape=(np.prod(np.array(shape)[2:])*shape[0], shape[1]))
 
-        self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
-                                  num_units=self.num_classes,
-                                  nonlinearity=softmax))
-        # self.softmax = DenseLayer(dropout(reshape, p=0.),
+        # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
         #                           num_units=self.num_classes,
-        #                           nonlinearity=softmax)
+        #                           nonlinearity=softmax))
+        self.softmax = softmax(reshape)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(shape[0], self.num_classes) + shape[2:])
