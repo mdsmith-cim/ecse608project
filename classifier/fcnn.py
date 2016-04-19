@@ -408,20 +408,29 @@ class FCNN(object):
                                 W=Constant(1./16.))
         sum_54_up = InverseLayer(sum_54_up,
                                  sum_54_up)
-        print get_output_shape(sum_54_up)
 
 
         sum_543 = ElemwiseSumLayer((sum_54_up, c33_slice))
 
         # sum_543_up = Upscale2DLayer(sum_543, 8)
-        b_up_1 = np.zeros((2, 3), dtype='float32')
-        b_up_1[0, 0] = 1
-        b_up_1[1, 1] = 1
-        b_up_1 = b_up_1.flatten()
-        l_loc_543 = DenseLayer(sum_543, num_units=6, W=Constant(0), b=b_up_1, nonlinearity=None)
-        l_loc_543.add_param(l_loc_543.W, l_loc_543.W.get_value().shape, trainable=False)
-        l_loc_543.add_param(l_loc_543.b, l_loc_543.b.get_value().shape, trainable=False)
-        sum_543_up = TransformerLayer(sum_543, l_loc_543, 0.125)
+        # b_up_1 = np.zeros((2, 3), dtype='float32')
+        # b_up_1[0, 0] = 1
+        # b_up_1[1, 1] = 1
+        # b_up_1 = b_up_1.flatten()
+        # l_loc_543 = DenseLayer(sum_543, num_units=6, W=Constant(0), b=b_up_1, nonlinearity=None)
+        # l_loc_543.add_param(l_loc_543.W, l_loc_543.W.get_value().shape, trainable=False)
+        # l_loc_543.add_param(l_loc_543.b, l_loc_543.b.get_value().shape, trainable=False)
+        # sum_543_up = TransformerLayer(sum_543, l_loc_543, 0.125)
+
+        sum_543_up = Conv2DLayer(PadLayer(sum_543, 24),
+                                 num_filters=21,
+                                 filter_size=(16, 16),
+                                 stride=(8, 8),
+                                 W=Constant(1./256.))
+        sum_543_up = InverseLayer(sum_543_up,
+                                  sum_543_up)
+
+        print get_output_shape(sum_543_up)
 
         shape = get_output_shape(sum_543_up)
         shuffle = DimshuffleLayer(sum_543_up, pattern=(0, 2, 3, 1))
