@@ -316,7 +316,7 @@ class FCNN(object):
                              W=GlorotUniform())
 
         c33_slice = SliceLayer(c33, indices=slice(12, -12), axis=2)
-        c33_slice = SliceLayer(c33_slice, indices=slice(10, -10), axis=3)
+        c33_slice = SliceLayer(c33_slice, indices=slice(12, -12), axis=3)
 
         p3 = MaxPool2DDNNLayer(c32,
                                pool_size=2)
@@ -357,7 +357,7 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c43_slice = SliceLayer(c43, indices=slice(6, -6), axis=2)
+        c43_slice = SliceLayer(c43, indices=slice(5, -5), axis=2)
         c43_slice = SliceLayer(c43_slice, indices=slice(5, -5), axis=3)
 
         p4 = MaxPool2DDNNLayer(c42,
@@ -389,7 +389,7 @@ class FCNN(object):
 
         c52_up = Upscale2DLayer(c52, 2)
 
-        sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
+        sum_54 = PadLayer(ElemwiseSumLayer((c52_up, c43_slice)), 1)
 
         # sum_54_up = Upscale2DLayer(sum_54, 2)
         # b_up_0 = np.zeros((2, 3), dtype='float32')
