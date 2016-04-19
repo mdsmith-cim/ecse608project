@@ -405,8 +405,7 @@ class FCNN(object):
                                 num_filters=21,
                                 filter_size=(4, 4),
                                 stride=(2, 2),
-                                W=Constant(1./16.),
-                                pad='same')
+                                W=Constant(1./16.))
         sum_54_up = InverseLayer(sum_54_up,
                                  sum_54_up)
         print get_output_shape(sum_54_up)
