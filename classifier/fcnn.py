@@ -438,7 +438,7 @@ class FCNN(object):
         # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
         #                           num_units=self.num_classes,
         #                           nonlinearity=softmax))
-        self.softmax = batch_norm(NonlinearityLayer(reshape, nonlinearity=softmax))
+        self.softmax = NonlinearityLayer(reshape, nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(shape[0], self.num_classes) + shape[2:])
