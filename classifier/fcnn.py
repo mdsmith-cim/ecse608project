@@ -387,7 +387,7 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c52_up = Upscale2DLayer(c52, 2)
+        c52_up = PadLayer(Upscale2DLayer(c52, 2), 1)
 
         sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
 
