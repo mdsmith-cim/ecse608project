@@ -34,7 +34,7 @@ class FCNN(object):
         self.filter_size = filter_size
         self.patch_size = patch_size
         self.r = len(conv_nodes)*(filter_size[0]/2)
-        self.extraction_step = (1, 1, 64, 64)
+        self.extraction_step = (1, 1, 32, 32)
         self.num_channels = num_channels
         self.num_classes = num_classes
         self.conv_nodes = conv_nodes
@@ -84,8 +84,8 @@ class FCNN(object):
 
         x = np.expand_dims(np.rollaxis(x, 2, 0), axis=0)
         xs, ys = x.shape[2:]
-        xp = 80 + (64 - xs % 64)/2 + 1
-        yp = 80 + (64 - ys % 64)/2 + 1
+        xp = 96 + (32 - xs % 32)/2 + 1
+        yp = 96 + (32 - ys % 32)/2 + 1
 
         x = np.pad(x, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
 
@@ -315,7 +315,7 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c33_slice = SliceLayer(c33, indices=slice(10, -10), axis=2)
+        c33_slice = SliceLayer(c33, indices=slice(12, -12), axis=2)
         c33_slice = SliceLayer(c33_slice, indices=slice(10, -10), axis=3)
 
         p3 = MaxPool2DDNNLayer(c32,
@@ -387,7 +387,7 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c52_up = Upscale2DLayer(c52, 4)
+        c52_up = Upscale2DLayer(c52, 2)
 
         sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
 
@@ -401,7 +401,7 @@ class FCNN(object):
         # l_loc_54.add_param(l_loc_54.b, l_loc_54.b.get_value().shape, trainable=False)
         # sum_54_up = TransformerLayer(sum_54, l_loc_54, 0.5)
 
-        sum_54_up = Conv2DLayer(PadLayer(sum_54, 2),
+        sum_54_up = Conv2DLayer(sum_54,
                                 num_filters=21,
                                 filter_size=(4, 4),
                                 stride=(2, 2),
@@ -419,7 +419,7 @@ class FCNN(object):
         l_loc_543 = DenseLayer(sum_543, num_units=6, W=Constant(0), b=b_up_1, nonlinearity=None)
         l_loc_543.add_param(l_loc_543.W, l_loc_543.W.get_value().shape, trainable=False)
         l_loc_543.add_param(l_loc_543.b, l_loc_543.b.get_value().shape, trainable=False)
-        sum_543_up = TransformerLayer(sum_543, l_loc_543, 0.125)
+        sum_543_up = TransformerLayer(sum_543, l_loc_543, 0.0625)
 
         # sum_543_up = Conv2DLayer(PadLayer(sum_543, 28),
         #                          num_filters=21,
@@ -466,8 +466,8 @@ class FCNN(object):
 
             xs, ys = input.shape[2:]
 
-            xp = 80 + (64 - xs % 64)/2 + 1
-            yp = 80 + (64 - ys % 64)/2 + 1
+            xp = 96 + (32 - xs % 32)/2 + 1
+            yp = 96 + (32 - ys % 32)/2 + 1
 
             input = np.pad(input, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
             target = np.pad(target, ((0, 0), (0, 0), (xp, xp), (yp, yp)), mode='symmetric')
@@ -481,7 +481,7 @@ class FCNN(object):
             valid = range(out.shape[0])
 
             if shuffle:
-                valid = np.random.choice(valid, int(len(valid)*0.1), replace=False)
+                valid = np.random.choice(valid, int(len(valid)*0.25), replace=False)
                 np.random.shuffle(valid)
 
             out = out[valid]
@@ -505,7 +505,7 @@ class FCNN(object):
 
             for i in inner_indices:
 
-                tars = out_targets[i:i+1, :, 80:-80, 80:-80]
+                tars = out_targets[i:i+1, :, 96:-96, 96:-96]
                 tars = tars.reshape((-1,))
 
                 yield out[i:i+1], tars
@@ -547,15 +547,15 @@ class FCNN(object):
         img = np.zeros(image_size)
         n = np.zeros(image_size)
 
-        n_h = i_h - p_h - 80 + 1
-        n_w = i_w - p_w - 80 + 1
+        n_h = i_h - p_h - 96 + 1
+        n_w = i_w - p_w - 96 + 1
 
         # st_h = (i_h - p_h)/self.f
         # st_w = (i_w - p_w)/self.f
 
         for p, (i, j) in zip(patches,
-                             product(range(80, n_h, p_h),
-                                     range(80, n_w, p_w))):
+                             product(range(96, n_h, p_h),
+                                     range(96, n_w, p_w))):
             img[0, :, i:i + p_h, j:j + p_w] += p
             n[0, :, i:i + p_h, j:j + p_w] += 1
 
