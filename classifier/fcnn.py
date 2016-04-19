@@ -422,7 +422,7 @@ class FCNN(object):
         # l_loc_543.add_param(l_loc_543.b, l_loc_543.b.get_value().shape, trainable=False)
         # sum_543_up = TransformerLayer(sum_543, l_loc_543, 0.125)
 
-        sum_543_up = Conv2DLayer(PadLayer(sum_543, 24),
+        sum_543_up = Conv2DLayer(PadLayer(sum_543, 28),
                                  num_filters=21,
                                  filter_size=(16, 16),
                                  stride=(8, 8),
