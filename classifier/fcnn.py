@@ -387,9 +387,9 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c52_up = Upscale2DLayer(c52, 2)
+        c52_up = PadLayer(Upscale2DLayer(c52, 2), 1)
 
-        sum_54 = PadLayer(ElemwiseSumLayer((c52_up, c43_slice)), 1)
+        sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
 
         # sum_54_up = Upscale2DLayer(sum_54, 2)
         # b_up_0 = np.zeros((2, 3), dtype='float32')
