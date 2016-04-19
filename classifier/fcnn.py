@@ -9,7 +9,7 @@ import theano.tensor as T
 
 from lasagne.layers import DenseLayer, InputLayer, ReshapeLayer, DimshuffleLayer, \
     concat, TransformerLayer, SliceLayer, ElemwiseSumLayer, InverseLayer, Conv2DLayer, PadLayer
-from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, batch_norm, Upscale2DLayer
+from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, batch_norm, Upscale2DLayer, NonlinearityLayer
 from lasagne.layers.dnn import Conv2DDNNLayer, MaxPool2DDNNLayer
 from lasagne.nonlinearities import rectify, softmax, linear
 from lasagne.objectives import aggregate, categorical_crossentropy, categorical_accuracy
@@ -440,7 +440,7 @@ class FCNN(object):
         # self.softmax = batch_norm(DenseLayer(dropout(reshape, p=0.),
         #                           num_units=self.num_classes,
         #                           nonlinearity=softmax))
-        self.softmax = softmax(get_output(reshape))
+        self.softmax = NonlinearityLayer(reshape, nonlinearity=softmax)
 
         self.network = ReshapeLayer(DimshuffleLayer(self.softmax, pattern=(1, 0)),
                                     shape=(shape[0], self.num_classes) + shape[2:])
