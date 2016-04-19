@@ -8,7 +8,7 @@ import theano
 import theano.tensor as T
 
 from lasagne.layers import DenseLayer, InputLayer, ReshapeLayer, DimshuffleLayer, \
-    concat, TransformerLayer, SliceLayer, ElemwiseSumLayer, InverseLayer, Conv2DLayer
+    concat, TransformerLayer, SliceLayer, ElemwiseSumLayer, InverseLayer, Conv2DLayer, PadLayer
 from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, batch_norm, Upscale2DLayer
 from lasagne.layers.dnn import Conv2DDNNLayer, MaxPool2DDNNLayer
 from lasagne.nonlinearities import rectify, softmax, linear
@@ -401,11 +401,12 @@ class FCNN(object):
         # l_loc_54.add_param(l_loc_54.b, l_loc_54.b.get_value().shape, trainable=False)
         # sum_54_up = TransformerLayer(sum_54, l_loc_54, 0.5)
 
-        sum_54_up = Conv2DLayer(sum_54,
+        sum_54_up = Conv2DLayer(PadLayer(sum_54, 4),
                                 num_filters=21,
                                 filter_size=(4, 4),
                                 stride=(2, 2),
-                                pad='full')
+                                W=Constant(1./16.),
+                                pad='same')
         sum_54_up = InverseLayer(sum_54_up,
                                  sum_54_up)
         print get_output_shape(sum_54_up)
