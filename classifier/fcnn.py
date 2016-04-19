@@ -77,7 +77,8 @@ class FCNN(object):
 
     def predict(self, x):
 
-        mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
+        # mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
+        mu = np.array([103.939, 116.779, 123.68], dtype=np.float32)
 
         x = np.float32(x) - mu
 
@@ -441,8 +442,8 @@ class FCNN(object):
 
             excerpt = indices[start_idx:start_idx + batch_size]
 
-            mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
-            # mu = np.array([123.68/255., 116.779/255., 103.939/255.], dtype=np.float32)
+            # mu = np.array([123.68, 116.779, 103.939], dtype=np.float32)
+            mu = np.array([103.939, 116.779, 123.68], dtype=np.float32)
 
             input = np.float32(inputs[excerpt[0]]) - mu
 
