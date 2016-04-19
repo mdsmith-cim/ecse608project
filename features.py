@@ -1,8 +1,9 @@
 import ConfigParser
+import cPickle as pickle
 import gc
 import os
 import socket
-from ast import literal_eval
+from copy import deepcopy
 from functools import partial
 from multiprocessing import Pool
 
@@ -11,13 +12,30 @@ import scipy.misc as scm
 import scipy.ndimage as ndi
 from skimage import color
 from skimage.feature import hog
-import cPickle as pickle
+
+# from sklearn.feature_extraction.image import PatchExtractor
+# from sklearn.cluster import spectral_clustering
+# from sklearn.feature_extraction import image
+from skimage.segmentation import slic
+from numpy.random import choice
+from scipy.stats import mode
+import cv2
+
+defaultSettings = {'hog': {'orientations': 8, 'pixels_per_cell': (4, 4), 'cells_per_block': (1, 1),
+                           'scales': [1, 2, 4, 8]}, 'images': {},
+                   'segment': {'vec_length': 30000, 'n_segments': 20, 'sigma': 1, 'compactness': 10},
+                   'segment2': {'step_size': 10, 'extended': True}}
+
+colorList = (
+    'aliceblue', 'beige', 'coral', 'darkorange', 'darkred', 'chocolate', 'gold', 'grey', 'hotpink', 'lime',
+    'mediumpurple',
+    'navajowhite', 'orchid', 'red', 'silver', 'yellow', 'wheat', 'violet', 'springgreen', 'sienna', 'olive',
+    'firebrick')
 
 
 # NOTE: We assume pixels_per_cell has the same size in both directions in multiple code locations
 def calculateFeatures(trainData, trainLabels, testData, testLabels, featureType='hog', database='voc2011',
-                      featureSettings={'orientations': 8, 'pixels_per_cell': (4, 4), 'cells_per_block': (1, 1),
-                                       'scales': [1, 2, 4, 8]}):
+                      **settings):
     config = ConfigParser.SafeConfigParser()
     config.read('config.cfg')
 
@@ -25,6 +43,8 @@ def calculateFeatures(trainData, trainLabels, testData, testLabels, featureType=
     dirOption = database + 'dir_' + hostname
 
     if featureType == 'hog':
+        featureSettings = deepcopy(defaultSettings[featureType])
+        featureSettings.update(**settings)
         try:
             print "Attempting to load previously computed features from disk..."
 
@@ -110,8 +130,275 @@ def calculateFeatures(trainData, trainLabels, testData, testLabels, featureType=
             print "Data saved."
 
         return hogTrain, trainLabelsR, hogTest, testLabelsR
+    elif featureType == 'images':
+        raise NotImplementedError('Not implemented (yet) or probably ever')
+    elif featureType == 'segment':
+
+        featureSettings = deepcopy(defaultSettings[featureType])
+        featureSettings.update(**settings)
+
+        try:
+            print "Attempting to load previously computed features from disk..."
+
+            dbLocation = config.get('Databases', dirOption)
+            trainFile = np.load(os.path.join(dbLocation, featureType + '_train.npz'))
+            testFile = np.load(os.path.join(dbLocation, featureType + '_test.npz'))
+
+            file = open(os.path.join(dbLocation, featureType + '_settings.dat'), 'rb')
+            featureSettingsSaved = pickle.load(file)
+            file.close()
+
+            for k, v in featureSettings.iteritems():
+                if featureSettingsSaved[k] != v:
+                    raise Exception('Feature settings for saved data do not match request')
+
+            trft = trainFile['trft']
+            trlb = trainFile['trlb']
+            tra = trainFile['tra']
+
+            tstft = testFile['tstft']
+            tstlb = testFile['tstlb']
+            tsta = testFile['tsta']
+
+            print "Features loaded."
+
+        except Exception as e:
+
+            print e
+            print "Unable to load data from disk; calculating features..."
+            p = Pool()
+
+            # tr = p.apply_async(segmentProcess, (trainData, trainLabels, featureSettings))
+            # tst = p.apply_async(segmentProcess, (testData, testLabels, featureSettings))
+            # p.close()
+            # p.join()
+
+            tr = segmentProcess(trainData, trainLabels, featureSettings)
+            tst = segmentProcess(testData, testLabels, featureSettings)
+
+            # tr = tr.get()
+            # tst = tst.get()
+            trft = tr[0]
+            trlb = tr[1]
+            tra = tr[2]
+            tstft = tst[0]
+            tstlb = tst[1]
+            tsta = tst[2]
+
+            print "Saving data to disk..."
+
+            np.savez_compressed(os.path.join(dbLocation, featureType + '_train.npz'), trft=trft,
+                                trlb=trlb, tra=tra)
+            np.savez_compressed(os.path.join(dbLocation, featureType + '_test.npz'), tstft=tstft,
+                                tstlb=tstlb, tsta=tsta)
+
+            file = open(os.path.join(dbLocation, featureType + '_settings.dat'), 'wb')
+            pickle.dump(featureSettings, file, protocol=pickle.HIGHEST_PROTOCOL)
+            file.close()
+
+        return trft, trlb, tra, tstft, tstlb, tsta
+    elif featureType == 'segment2':
+        featureSettings = deepcopy(defaultSettings[featureType])
+        featureSettings.update(**settings)
+
+        try:
+            print "Attempting to load previously computed features from disk..."
+
+            dbLocation = config.get('Databases', dirOption)
+            trainFile = np.load(os.path.join(dbLocation, featureType + '_train.npz'))
+            testFile = np.load(os.path.join(dbLocation, featureType + '_test.npz'))
+
+            file = open(os.path.join(dbLocation, featureType + '_settings.dat'), 'rb')
+            featureSettingsSaved = pickle.load(file)
+            file.close()
+
+            for k, v in featureSettings.iteritems():
+                if featureSettingsSaved[k] != v:
+                    raise Exception('Feature settings for saved data do not match request')
+
+            trft = trainFile['trft']
+            trlb = trainFile['trlb']
+
+            tstft = testFile['tstft']
+            tstlb = testFile['tstlb']
+
+            print "Features loaded."
+
+        except Exception as e:
+
+            print e
+            print "Unable to load data from disk; calculating features..."
+            p = Pool()
+
+            tr = p.apply_async(segmentProcess2, (trainData, trainLabels, featureSettings))
+            tst = p.apply_async(segmentProcess2, (testData, testLabels, featureSettings))
+            p.close()
+            p.join()
+
+            # tr = segmentProcess2(trainData, trainLabels, featureSettings)
+            # tst = segmentProcess2(testData, testLabels, featureSettings)
+
+            tr = tr.get()
+            tst = tst.get()
+            trft = tr[0]
+            trlb = tr[1]
+            tstft = tst[0]
+            tstlb = tst[1]
+
+            print "Saving data to disk..."
+
+            np.savez_compressed(os.path.join(dbLocation, featureType + '_train.npz'), trft=trft,
+                                trlb=trlb)
+            np.savez_compressed(os.path.join(dbLocation, featureType + '_test.npz'), tstft=tstft,
+                                tstlb=tstlb)
+
+            file = open(os.path.join(dbLocation, featureType + '_settings.dat'), 'wb')
+            pickle.dump(featureSettings, file, protocol=pickle.HIGHEST_PROTOCOL)
+            file.close()
+
+        return trft, trlb, tstft, tstlb
+
     else:
-        raise NotImplementedError('Features other than HOG not implemented.')
+        raise NotImplementedError('Not implemented.')
+
+
+def segmentProcess(data, labels, featureSettings):
+    feat = []
+    labs = []
+
+    vecLength = featureSettings['vec_length']
+    n_segments = featureSettings['n_segments']
+    sigma = featureSettings['sigma']
+    compactness = featureSettings['compactness']
+
+    assignments = []
+
+    for imgIdx in range(0, len(data)):
+        # print "Processing image %i/%i" % (imgIdx + 1, len(data))
+        img = data[imgIdx]
+        seg = slic(img, n_segments=n_segments, sigma=sigma, compactness=compactness)
+        assignments.append(seg)
+        for i in range(seg.min(), seg.max()):
+            pix = img[seg == i]
+            lab = labels[imgIdx][seg == i]
+            try:
+                reduced = choice(pix.ravel(), vecLength, replace=False)
+            except ValueError:
+                reduced = choice(pix.ravel(), vecLength, replace=True)
+            commonLabel = mode(lab)[0]
+
+            feat.append(reduced)
+            labs.append(commonLabel)
+
+    feat = np.vstack(feat)
+    labs = np.vstack(labs)
+    return feat, labs, assignments
+
+
+def segmentProcess2(data, labels, featureSettings):
+    feat = []
+    labs = []
+
+    step_size = featureSettings['step_size']
+
+    extr = cv2.xfeatures2d.SURF_create(extended=featureSettings['extended'])
+
+    for imgIdx in range(0, len(data)):
+        print "Processing image %i/%i" % (imgIdx + 1, len(data))
+        img = data[imgIdx]
+        grayImg = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+        kp = [cv2.KeyPoint(x, y, step_size) for y in range(0, grayImg.shape[0], step_size)
+              for x in range(0, grayImg.shape[1], step_size)]
+        kp2, des = extr.compute(grayImg, kp)
+
+        feat.append(des)
+
+        for i in kp:
+            pt = i.pt
+            size = i.size
+            lab = labels[imgIdx][int(max(pt[1] - size / 2, 0)): int(min(grayImg.shape[0], pt[1] + size / 2)),
+                  int(max(pt[0] - size / 2, 0)): int(min(pt[0] + size / 2, grayImg.shape[1]))]
+
+            commonLabel = mode(lab, None)[0]
+
+            labs.append(commonLabel)
+
+    feat = np.vstack(feat)
+    labs = np.vstack(labs)
+    return feat, labs
+
+
+# For segment2
+def getLabeledImages2(images, computedLabels, **settings):
+    featureSettings = deepcopy(defaultSettings['segment2'])
+    featureSettings.update(**settings)
+
+    step_size = featureSettings['step_size']
+
+    result = []
+    idx = 0
+
+    for imgIdx in range(0, len(images)):
+        print "Processing image %i/%i" % (imgIdx + 1, len(images))
+        img = images[imgIdx]
+
+        kp = [cv2.KeyPoint(x, y, step_size) for y in range(0, img.shape[0], step_size)
+              for x in range(0, img.shape[1], step_size)]
+
+        tmpResult = np.zeros(img.shape[0:2])
+
+        for i in kp:
+            pt = i.pt
+            size = i.size
+            tmpResult[int(max(pt[1] - size / 2, 0)): int(min(img.shape[0], pt[1] + size / 2)),
+            int(max(pt[0] - size / 2, 0)): int(min(pt[0] + size / 2, img.shape[1]))] = computedLabels[idx]
+
+            idx += 1
+
+        result.append(tmpResult)
+
+    return result
+# Use
+#plt.imshow(result[idx], extent=[0,1,0,1]); plt.hold(True); plt.imshow(images[idx], extent=[0,1,0,1],alpha = 0.5); plt.show()
+
+def getLabeledImages(images, assignedLabels, mapping):
+    result = []
+    idx = 0
+    for i in range(0, len(images)):
+        map = mapping[i]
+        img = images[i]
+
+        tmpLabelAssigment = np.zeros(map.shape)
+        for j in range(map.min(), map.max()):
+            tmpLabelAssigment[map == j] = assignedLabels[idx]
+            idx += 1
+
+        labelImg = color.label2rgb(tmpLabelAssigment, img, colorList, 0.5, bg_label=0, kind='overlay')
+        result.append(labelImg)
+
+    return result
+
+
+# def imageProcess(data, labels):
+#     # First: resize all images to the same size
+#     # Get max size of images
+#     maxSize = (0, 0, 0)
+#     for img in data:
+#         maxSize = np.maximum(maxSize, img.shape)
+#
+#     resizedImages = np.zeros(np.append(len(data), maxSize))
+#     # Actually resize images now
+#     print "Resizing images to %s" % str(maxSize)
+#     for i in range(0, len(data)):
+#         resizedImages[i] = scm.imresize(data[i], maxSize)
+#
+#     print "Resizing labels to match..."
+#     maxSizeL = maxSize[0:2]
+#     resizedLabels = np.zeros(np.append(len(labels), maxSizeL))
+#     for i in range(0, len(labels)):
+#         resizedLabels[i] = scm.imresize(data[i], maxSizeL)
+
 
 
 def calculateMultiscaleHOG(scale, smallestScale, featureSettings, data):
