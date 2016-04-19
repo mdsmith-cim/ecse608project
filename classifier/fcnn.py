@@ -419,7 +419,7 @@ class FCNN(object):
         l_loc_543 = DenseLayer(sum_543, num_units=6, W=Constant(0), b=b_up_1, nonlinearity=None)
         l_loc_543.add_param(l_loc_543.W, l_loc_543.W.get_value().shape, trainable=False)
         l_loc_543.add_param(l_loc_543.b, l_loc_543.b.get_value().shape, trainable=False)
-        sum_543_up = TransformerLayer(sum_543, l_loc_543, 0.0625)
+        sum_543_up = TransformerLayer(sum_543, l_loc_543, 0.125)
 
         # sum_543_up = Conv2DLayer(PadLayer(sum_543, 28),
         #                          num_filters=21,
