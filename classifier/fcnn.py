@@ -357,7 +357,7 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c43_slice = SliceLayer(c43, indices=slice(5, -5), axis=2)
+        c43_slice = SliceLayer(c43, indices=slice(6, -6), axis=2)
         c43_slice = SliceLayer(c43_slice, indices=slice(5, -5), axis=3)
 
         p4 = MaxPool2DDNNLayer(c42,
@@ -387,7 +387,7 @@ class FCNN(object):
                              nonlinearity=linear,
                              W=GlorotUniform())
 
-        c52_up = PadLayer(Upscale2DLayer(c52, 2), 1)
+        c52_up = Upscale2DLayer(c52, 2)
 
         sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
 
