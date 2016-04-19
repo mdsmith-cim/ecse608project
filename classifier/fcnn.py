@@ -8,7 +8,7 @@ import theano
 import theano.tensor as T
 
 from lasagne.layers import DenseLayer, InputLayer, ReshapeLayer, DimshuffleLayer, \
-    concat, TransformerLayer, SliceLayer, ElemwiseSumLayer, InverseLayer
+    concat, TransformerLayer, SliceLayer, ElemwiseSumLayer, InverseLayer, Conv2DLayer
 from lasagne.layers import dropout, get_output, get_all_params, get_output_shape, batch_norm, Upscale2DLayer
 from lasagne.layers.dnn import Conv2DDNNLayer, MaxPool2DDNNLayer
 from lasagne.nonlinearities import rectify, softmax, linear
@@ -392,14 +392,24 @@ class FCNN(object):
         sum_54 = ElemwiseSumLayer((c52_up, c43_slice))
 
         # sum_54_up = Upscale2DLayer(sum_54, 2)
-        b_up_0 = np.zeros((2, 3), dtype='float32')
-        b_up_0[0, 0] = 1
-        b_up_0[1, 1] = 1
-        b_up_0 = b_up_0.flatten()
-        l_loc_54 = DenseLayer(sum_54, num_units=6, W=Constant(0), b=b_up_0, nonlinearity=None)
-        l_loc_54.add_param(l_loc_54.W, l_loc_54.W.get_value().shape, trainable=False)
-        l_loc_54.add_param(l_loc_54.b, l_loc_54.b.get_value().shape, trainable=False)
-        sum_54_up = TransformerLayer(sum_54, l_loc_54, 0.5)
+        # b_up_0 = np.zeros((2, 3), dtype='float32')
+        # b_up_0[0, 0] = 1
+        # b_up_0[1, 1] = 1
+        # b_up_0 = b_up_0.flatten()
+        # l_loc_54 = DenseLayer(sum_54, num_units=6, W=Constant(0), b=b_up_0, nonlinearity=None)
+        # l_loc_54.add_param(l_loc_54.W, l_loc_54.W.get_value().shape, trainable=False)
+        # l_loc_54.add_param(l_loc_54.b, l_loc_54.b.get_value().shape, trainable=False)
+        # sum_54_up = TransformerLayer(sum_54, l_loc_54, 0.5)
+
+        sum_54_up = Conv2DLayer(sum_54,
+                                num_filters=21,
+                                filter_size=(4, 4),
+                                stride=(2, 2),
+                                pad='full')
+        sum_54_up = InverseLayer(sum_54_up,
+                                 sum_54_up)
+        print get_output_shape(sum_54_up)
+
 
         sum_543 = ElemwiseSumLayer((sum_54_up, c33_slice))
 
