@@ -197,7 +197,7 @@ class FCNN(object):
 
     def build_net(self):
 
-        input_layer = InputLayer(shape=(1, self.num_channels) + self.patch_size,
+        input_layer = InputLayer(shape=(30, self.num_channels) + self.patch_size,
                                  input_var=self.input_var)
 
         c00 = Conv2DDNNLayer(input_layer,
@@ -495,20 +495,20 @@ class FCNN(object):
             #
             # yield out, tars
 
-            # for idx in range(0, out.shape[0] - 22 + 1, 22):
-            #
-            #     e = inner_indices[idx:idx+22]
-            #     tars = out_targets[e, :, 96:-96, 96:-96]
-            #     tars = tars.reshape((-1,))
-            #
-            #     yield out[e], tars
+            for idx in range(0, out.shape[0] - 30 + 1, 30):
 
-            for i in inner_indices:
-
-                tars = out_targets[i:i+1, :, 96:-96, 96:-96]
+                e = inner_indices[idx:idx+30]
+                tars = out_targets[e, :, 96:-96, 96:-96]
                 tars = tars.reshape((-1,))
 
-                yield out[i:i+1], tars
+                yield out[e], tars
+
+            # for i in inner_indices:
+            #
+            #     tars = out_targets[i:i+1, :, 96:-96, 96:-96]
+            #     tars = tars.reshape((-1,))
+            #
+            #     yield out[i:i+1], tars
 
     def iterate_minibatches_test(self, inputs, batchsize, shuffle=False):
 
