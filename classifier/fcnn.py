@@ -401,7 +401,6 @@ class FCNN(object):
         # l_loc_54.add_param(l_loc_54.b, l_loc_54.b.get_value().shape, trainable=False)
         # sum_54_up = TransformerLayer(sum_54, l_loc_54, 0.5)
 
-        # foo
         sum_54_up = Conv2DLayer(sum_54,
                                 num_filters=21,
                                 filter_size=(4, 4),
