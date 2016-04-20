@@ -18,6 +18,7 @@ from skimage.feature import hog
 # from sklearn.feature_extraction import image
 from skimage.segmentation import slic
 from numpy.random import choice
+from matplotlib import pyplot as plt
 from scipy.stats import mode
 import cv2
 
@@ -25,12 +26,6 @@ defaultSettings = {'hog': {'orientations': 8, 'pixels_per_cell': (4, 4), 'cells_
                            'scales': [1, 2, 4, 8]}, 'images': {},
                    'segment': {'vec_length': 30000, 'n_segments': 20, 'sigma': 1, 'compactness': 10},
                    'segment2': {'step_size': 10, 'extended': True}}
-
-colorList = (
-    'aliceblue', 'beige', 'coral', 'darkorange', 'darkred', 'chocolate', 'gold', 'grey', 'hotpink', 'lime',
-    'mediumpurple',
-    'navajowhite', 'orchid', 'red', 'silver', 'yellow', 'wheat', 'violet', 'springgreen', 'sienna', 'olive',
-    'firebrick')
 
 
 # NOTE: We assume pixels_per_cell has the same size in both directions in multiple code locations
@@ -304,7 +299,7 @@ def segmentProcess2(data, labels, featureSettings):
     extr = cv2.xfeatures2d.SURF_create(extended=featureSettings['extended'])
 
     for imgIdx in range(0, len(data)):
-        print "Processing image %i/%i" % (imgIdx + 1, len(data))
+        # print "Processing image %i/%i" % (imgIdx + 1, len(data))
         img = data[imgIdx]
         grayImg = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
@@ -340,7 +335,7 @@ def getLabeledImages2(images, computedLabels, **settings):
     idx = 0
 
     for imgIdx in range(0, len(images)):
-        print "Processing image %i/%i" % (imgIdx + 1, len(images))
+        # print "Processing image %i/%i" % (imgIdx + 1, len(images))
         img = images[imgIdx]
 
         kp = [cv2.KeyPoint(x, y, step_size) for y in range(0, img.shape[0], step_size)
@@ -359,25 +354,48 @@ def getLabeledImages2(images, computedLabels, **settings):
         result.append(tmpResult)
 
     return result
-# Use
-#plt.imshow(result[idx], extent=[0,1,0,1]); plt.hold(True); plt.imshow(images[idx], extent=[0,1,0,1],alpha = 0.5); plt.show()
 
-def getLabeledImages(images, assignedLabels, mapping):
+
+def showLabels(images, labelMap, imageNumber):
+    ext = [0, 1, 0, 1]
+    plt.imshow(labelMap[imageNumber], extent=ext)
+    plt.hold(True)
+    plt.imshow(images[imageNumber], extent=ext, alpha=0.5)
+    plt.show()
+
+
+# This is for RGB w/ segment
+def getLabeledImages(assignedLabels, mapping):
     result = []
     idx = 0
-    for i in range(0, len(images)):
-        map = mapping[i]
-        img = images[i]
+    for i in range(0, len(mapping)):
+        mapp = mapping[i]
 
-        tmpLabelAssigment = np.zeros(map.shape)
-        for j in range(map.min(), map.max()):
-            tmpLabelAssigment[map == j] = assignedLabels[idx]
+        tmpLabelAssigment = np.zeros(mapp.shape)
+        for j in range(mapp.min(), mapp.max()):
+            tmpLabelAssigment[mapp == j] = assignedLabels[idx]
             idx += 1
 
-        labelImg = color.label2rgb(tmpLabelAssigment, img, colorList, 0.5, bg_label=0, kind='overlay')
-        result.append(labelImg)
+        result.append(tmpLabelAssigment)
 
     return result
+
+
+# def getLabeledImagesHOG(images, assignedLabels, **settings):
+#     featureSettings = deepcopy(defaultSettings['hog'])
+#     featureSettings.update(**settings)
+#
+#     scales = featureSettings['scales']
+#     smallestScale = np.min(scales)
+#
+#     pixels_per_cell = tuple(smallestScale * np.array(featureSettings['pixels_per_cell']))
+#
+#     result = []
+#
+#     for i in range(0, len(images)):
+#         # Figure out how many observations we got based on size
+#         img = images[i]
+
 
 
 # def imageProcess(data, labels):
