@@ -42,8 +42,8 @@ class BasicClassifier:
     def getClassifierObject(self):
         return self.theClassifier
 
-    def getPrediction(self, dataX, datay):
-        return self.theClassifier.predict(dataX, datay.ravel())
+    def getPrediction(self, dataX):
+        return self.theClassifier.predict(dataX)
 
     def saveToDisk(self, filename):
         print "Saving to disk..."
