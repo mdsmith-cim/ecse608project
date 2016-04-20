@@ -32,6 +32,7 @@ class FCNN(object):
         self.extraction_step = (1, 1, 32, 32)
         self.num_channels = num_channels
         self.num_classes = num_classes
+        self.dropout_rate = 0.5
 
         self.batch_size = batch_size
 
