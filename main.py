@@ -3,6 +3,7 @@ import numpy as np
 import features as ft
 import load_data as ld
 from basicClassifier.bscCls import BasicClassifier
+import timeit
 
 classDefs = {0: 'background', 1: 'aeroplane', 2: 'bicycle', 3: 'bird', 4: 'boat', 5: 'bottle', 6: 'bus', 7: 'car',
              8: 'cat', 9: 'chair',
@@ -18,6 +19,7 @@ def main():
     # sdbl.setDBLocation()
 
     # Main code
+    startTime = timeit.default_timer()
     trainData, trainLabels = ld.load_images('train')
     testData, testLabels = ld.load_images('test')
     # hogTrain, trainLabelsV, hogTest, testLabelsV = ft.calculateFeatures(trainData, trainLabels, testData, testLabels)
@@ -26,12 +28,11 @@ def main():
                                                                           testData,
                                                                           testLabels,
                                                                           featureType='segment2')
-
     # gc.collect()
     cls = BasicClassifier('randomForest')
 
-    # cls.trainModel(segTrainFt, segTrainLab)
-    cls.loadFromDisk('rndForest_surf.dat')
+    cls.trainModel(segTrainFt, segTrainLab)
+    #cls.loadFromDisk('rndForest_surf.dat')
     # gc.collect()
 
     # cls.saveToDisk('rndForest_surf.dat')
@@ -41,38 +42,42 @@ def main():
     # cls.printScore(segTestFt, segTestLab)
 
     predictedLabelTest = cls.getPrediction(segTestFt)
-    predictedLabelTrain = cls.getPrediction(segTrainFt)
+    #predictedLabelTrain = cls.getPrediction(segTrainFt)
 
-    predictedLabelTrainMap = ft.getLabeledImages2(trainData, predictedLabelTrain)
+    #predictedLabelTrainMap = ft.getLabeledImages2(trainData, predictedLabelTrain)
     predictedLabelTestMap = ft.getLabeledImages2(testData, predictedLabelTest)
 
-    print "TRAINING: SURF"
-    printIUScore(predictedLabelTrainMap, trainLabels)
+    #print "TRAINING: SURF"
+    #printIUScore(predictedLabelTrainMap, trainLabels)
     print "TESTING: SURF"
     printIUScore(predictedLabelTestMap, testLabels)
 
-    seg1TrainFt, seg1TrainLab, seg1TrainAnn, seg1TestFt, seg1TestLab, seg1TestAnn = ft.calculateFeatures(trainData,
-                                                                                                         trainLabels,
-                                                                                                         testData,
-                                                                                                         testLabels,
-                                                                                                         featureType='segment')
+    elapsedTime = timeit.default_timer() - startTime
 
-    cls = BasicClassifier('randomForest')
+    print "Elapsed time: %f seconds" % elapsedTime
 
-    # cls.trainModel(seg1TrainFt, seg1TrainLab)
-    cls.loadFromDisk('rndForest_rgb.dat')
-    # cls.saveToDisk('rndForest_rgb.dat')
-
-    predictedLabelTest = cls.getPrediction(seg1TestFt)
-    predictedLabelTrain = cls.getPrediction(seg1TrainFt)
-
-    predictedLabelTrainMap = ft.getLabeledImages(predictedLabelTrain, seg1TrainAnn)
-    predictedLabelTestMap = ft.getLabeledImages(predictedLabelTest, seg1TestAnn)
-
-    print "TRAINING: RGB"
-    printIUScore(predictedLabelTrainMap, trainLabels)
-    print "TESTING: RGB"
-    printIUScore(predictedLabelTestMap, testLabels)
+    # seg1TrainFt, seg1TrainLab, seg1TrainAnn, seg1TestFt, seg1TestLab, seg1TestAnn = ft.calculateFeatures(trainData,
+    #                                                                                                      trainLabels,
+    #                                                                                                      testData,
+    #                                                                                                      testLabels,
+    #                                                                                                      featureType='segment')
+    #
+    # cls = BasicClassifier('randomForest')
+    #
+    # # cls.trainModel(seg1TrainFt, seg1TrainLab)
+    # cls.loadFromDisk('rndForest_rgb.dat')
+    # # cls.saveToDisk('rndForest_rgb.dat')
+    #
+    # predictedLabelTest = cls.getPrediction(seg1TestFt)
+    # predictedLabelTrain = cls.getPrediction(seg1TrainFt)
+    #
+    # predictedLabelTrainMap = ft.getLabeledImages(predictedLabelTrain, seg1TrainAnn)
+    # predictedLabelTestMap = ft.getLabeledImages(predictedLabelTest, seg1TestAnn)
+    #
+    # print "TRAINING: RGB"
+    # printIUScore(predictedLabelTrainMap, trainLabels)
+    # print "TESTING: RGB"
+    # printIUScore(predictedLabelTestMap, testLabels)
 
 
 def calculateAccuracyScore(predictedLabelMap, actualLabels):

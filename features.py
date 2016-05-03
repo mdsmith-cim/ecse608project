@@ -23,7 +23,7 @@ from scipy.stats import mode
 import cv2
 
 defaultSettings = {'hog': {'orientations': 8, 'pixels_per_cell': (4, 4), 'cells_per_block': (1, 1),
-                           'scales': [1, 2, 4, 8]}, 'images': {},
+                           'scales': [1, 2, 4]}, 'images': {},
                    'segment': {'vec_length': 30000, 'n_segments': 20, 'sigma': 1, 'compactness': 10},
                    'segment2': {'step_size': 10, 'extended': True}}
 
@@ -381,20 +381,34 @@ def getLabeledImages(assignedLabels, mapping):
     return result
 
 
-# def getLabeledImagesHOG(images, assignedLabels, **settings):
-#     featureSettings = deepcopy(defaultSettings['hog'])
-#     featureSettings.update(**settings)
-#
-#     scales = featureSettings['scales']
-#     smallestScale = np.min(scales)
-#
-#     pixels_per_cell = tuple(smallestScale * np.array(featureSettings['pixels_per_cell']))
-#
-#     result = []
-#
-#     for i in range(0, len(images)):
-#         # Figure out how many observations we got based on size
-#         img = images[i]
+def getLabeledImagesHOG(images, assignedLabels, **settings):
+    featureSettings = deepcopy(defaultSettings['hog'])
+    featureSettings.update(**settings)
+
+    scales = featureSettings['scales']
+    smallestScale = np.min(scales)
+
+    pixels_per_cell = smallestScale * np.array(featureSettings['pixels_per_cell'])
+
+    result = []
+
+
+    totalNumObsv = 0
+    beginIdx = 0
+    for i in range(0, len(images)):
+        # Figure out how many observations we got based on size
+        img = images[i]
+        imgShape = img.shape
+        featureShape = np.array(imgShape) / pixels_per_cell
+        numObsv = np.prod(imgShape)
+
+        # for testing
+        totalNumObsv += numObsv
+
+        result.append(scm.imresize(np.reshape(assignedLabels[beginIdx : beginIdx + numObsv], featureShape), pixels_per_cell[0]))
+        beginIdx += numObsv
+
+
 
 
 
